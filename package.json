@@ -9,7 +9,7 @@
     "coffee-script": "*",
     "grunt-contrib-coffee": "*",
     "grunt-contrib-watch": "*",
-    "browserify": "",
+    "browserify": "2.33",
     "jasmine-node": "",
     "karma": "",
     "grunt": "",
