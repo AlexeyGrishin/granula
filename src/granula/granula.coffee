@@ -44,11 +44,11 @@ pluralizerParser = (pluralizeFunction) ->
       fn(val)
 
 
-
   nextPosition: (str, from) ->
     pos = str.indexOf(startSymbol, from)
     if pos > -1
       pos-- while pos > 0 and str[pos-1].match wordSeparator
+    console.log pos, str
     pos
 
   process: (str, from, context) ->
@@ -91,28 +91,45 @@ precompile = (text, parsers) ->
     (context.parts.map (p) ->p.apply(ctx)).join("")
 
 
+initPluralization = ->
+  pluralization = require('./pluralization')
+  for langName, fn of pluralization
+    lang[langName] ||= {}
+    lang[langName]._pluralize = fn
 
 module.exports =
 
   load: (langDefinition) ->
     for langName, setOfValues of langDefinition
-      lang[langName] = setOfValues
+      lang[langName] ||= {}
+      for key, value of setOfValues
+        lang[langName][key] = value
 
   reset: ->
     lang = {}
     precompiled = {}
+    initPluralization()
 
   init: (@options) ->
 
   translate: (language, key, args...) ->
     @_apply(language, key, args...)
 
+
+  compile: (language, pattern) ->
+    p = precompile(pattern, @_parsers(language))
+    (args...) ->p.apply(args)
+
+
   _precompiled: (language, key) ->
     return precompiled[language]?[key] ? @_precompile(language, key)
 
+  _parsers: (language) ->
+    [argumentParser(), pluralizerParser(lang[language]._pluralize)]
+
   _precompile: (language, key) ->
     precompiled[language] ||= {}
-    precompiled[language]._parsers = [argumentParser(), pluralizerParser(lang[language]._pluralize)] if not precompiled[language]._parsers
+    precompiled[language]._parsers = @_parsers(language) if not precompiled[language]._parsers
     precompiled[language][key] = precompile(@_get(language, key), precompiled[language]._parsers)
 
   _apply: (language, key, args...) ->
@@ -123,3 +140,5 @@ module.exports =
     val = lang[language][key]
     throw new Error("There is no definition for '#{key}' in language '#{language}'") if not val
     val
+
+module.exports.reset()

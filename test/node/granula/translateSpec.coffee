@@ -1,15 +1,29 @@
 
 granula = (require '../../../src/granula/granula')
+pluralization = (require '../../../src/granula/pluralization')
 
-xdescribe "pluralization functions", ->
+describe "pluralization functions", ->
 
   describe "for english", ->
 
-    it "shall return 1st form for value == 1", ->
-    it "shall return 2nd form for value == 2", ->
-    it "shall return 2nd form for value == 0", ->
+    beforeEach ->
+      granula.reset()
+      granula.load {en: {}}
+      @expr = granula.compile("en", "{{1}} word(s)")
 
-    it "shall compose 1st form by default", ->
+    it "shall return 1st form for value == 1", ->
+      expect(@expr(1)).toEqual("1 word")
+    it "shall return 2nd form for value == 2", ->
+      expect(@expr(2)).toEqual("2 words")
+    it "shall return 2nd form for value == 0", ->
+      expect(@expr(0)).toEqual("0 words")
+
+    it "shall use '' as 2nd form by default", ->
+      expr = granula.compile("en", "{{1}} word()")
+      expect(expr(1)).toEqual("1 word")
+      expect(expr(2)).toEqual("2 word")
+
+  describe "for russian", ->
 
 describe 'granula.translate', ->
 
