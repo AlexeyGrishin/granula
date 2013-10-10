@@ -1,0 +1,29 @@
+{
+  "name": "granula",
+  "version": "1.0.0",
+  "author": "Alexey.Grishin@gmail.com",
+  "dependencies": {
+
+  },
+  "devDependencies": {
+    "coffee-script": "*",
+    "grunt-contrib-coffee": "*",
+    "grunt-contrib-watch": "*",
+    "browserify": "",
+    "jasmine-node": "",
+    "karma": "",
+    "grunt": "",
+    "grunt-browserify": "",
+    "grunt-karma": "",
+    "grunt-jasmine-node": "",
+    "karma-jasmine": "*",
+    "karma-phantomjs-launcher": "*",
+    "karma-coffee-preprocessor": "*",
+    "karma-junit-reporter": "*",
+    "bower": "",
+    "phantomjs": "1.9.2-1"
+  },
+  "scripts": {
+    "test": "grunt test"
+  }
+}

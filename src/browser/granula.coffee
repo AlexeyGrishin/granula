@@ -1,0 +1,1 @@
+window.granula = (require('../granula/granula'))
