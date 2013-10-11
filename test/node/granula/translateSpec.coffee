@@ -24,6 +24,58 @@ describe "pluralization functions", ->
       expect(expr(2)).toEqual("2 word")
 
   describe "for russian", ->
+    beforeEach ->
+      granula.reset()
+      granula.load {ru: {}}
+      @expr3 = granula.compile("ru", "{{1}} медвед(ь,я,ей)")
+      @expr2 = granula.compile("ru", "{{1}} утка(ки,ок)")
+      @expr1 = granula.compile("ru", "{{1}} сапог(а)")
+
+    expectForm1 = (expr, template) ->
+      for x in [1,21]
+        expect(expr(x)).toEqual("#{x} #{template}")
+
+    expectForm2 = (expr, template) ->
+      for x in [2..4].concat [22..24]
+        expect(expr(x)).toEqual("#{x} #{template}")
+
+    expectForm3 = (expr, template) ->
+      for x in [5..20].concat [25]
+        expect(expr(x)).toEqual("#{x} #{template}")
+
+    describe "for all 3 forms specified", ->
+
+      it "shall return 1st form for value == 1 or 21", ->
+        expectForm1 @expr3, "медведь"
+
+      it "shall return 2st form for value == 2-4,22-24", ->
+        expectForm2 @expr3, "медведя"
+
+      it "shall return 3st form for value == 5-20,25", ->
+        expectForm3 @expr3, "медведей"
+
+    describe "for 2 forms specified", ->
+
+      it "shall return 1st form for value == 1 or 21", ->
+        expectForm1 @expr2, "утка"
+
+      it "shall return 2st form for value == 2-4,22-24", ->
+        expectForm2 @expr2, "утки"
+
+      it "shall return 3st form for value == 5-20,25", ->
+        expectForm3 @expr2, "уток"
+
+    describe "for 1 form specified", ->
+
+      it "shall return 1st form for value == 1 or 21", ->
+        expectForm1 @expr1, "сапог"
+
+      it "shall return 2st form for value == 2-4,22-24", ->
+        expectForm2 @expr1, "сапога"
+
+      it "shall return 3st form for value == 5-20,25", ->
+        expectForm3 @expr1, "сапог"
+
 
 describe 'granula.translate', ->
 
@@ -94,4 +146,87 @@ describe 'granula.translate', ->
 
       it "shall select plural form if nearest left value is plural", ->
         expect(granula.translate("lang1", "mouse", 2)).toEqual("2 mice")
+
+describe "granula.compile", ->
+
+  beforeEach ->
+    granula.reset()
+    granula.load {en:{
+      key1: "{{1}} cat(s)"
+    }}
+    @addMatchers
+      toBeFunction: ->
+        Object.prototype.toString.call(this.actual)=='[object Function]'
+
+  it "shall produce function", ->
+    expect(granula.compile("en", "{{1}} word(s)")).toBeFunction()
+
+  it "shall produce function which converts expression to string", ->
+    expect(granula.compile("en", "{{1}} word(s)")(6)).toEqual("6 words")
+
+  it "shall accept key as well", ->
+    expect(granula.compile("en", key:"key1")(1)).toEqual("1 cat")
+
+
+  describe "shall acccept custom interpolator", ->
+    customInterpolator = null
+    beforeEach ->
+      customInterpolator = jasmine.createSpyObj("interpolator", ["begin", "end", "string", "argument", "pluralExpression"])
+      customInterpolator.string.andReturn("1")
+      customInterpolator.argument.andReturn("2")
+      customInterpolator.pluralExpression.andReturn("3")
+
+    it "which shall be called for simple text", ->
+      granula.compile("en", "text").apply customInterpolator
+      expect(customInterpolator.string).toHaveBeenCalledWith(jasmine.any(Object), "text")
+      expect(customInterpolator.argument).not.toHaveBeenCalled()
+      expect(customInterpolator.pluralExpression).not.toHaveBeenCalled()
+
+    it "which shall be called for argument", ->
+      granula.compile("en", "{{x}}").apply customInterpolator
+      expect(customInterpolator.argument).toHaveBeenCalledWith(jasmine.any(Object), {argument:"x", index: 1})
+      expect(customInterpolator.string).not.toHaveBeenCalled()
+      expect(customInterpolator.pluralExpression).not.toHaveBeenCalled()
+
+    it "which shall be called for plural expression", ->
+      granula.compile("en", "{{y}}word(s)").apply customInterpolator
+      expect(customInterpolator.argument).toHaveBeenCalledWith(jasmine.any(Object), {argument:"y", index: 1})
+      console.log customInterpolator.string.mostRecentCall.args
+      expect(customInterpolator.string).not.toHaveBeenCalled()
+      expect(customInterpolator.pluralExpression).toHaveBeenCalled()
+
+    it "which shall be called for plural expression with plural function and related argument", ->
+      granula.compile("en", "{{x}}{{y}}word(s)").apply customInterpolator
+      pluralExpression = customInterpolator.pluralExpression.mostRecentCall.args[1]
+      argument = customInterpolator.pluralExpression.mostRecentCall.args[2]
+      expect(pluralExpression.word).toEqual("word")
+      expect(pluralExpression.suffixes).toEqual(["s"])
+      expect(pluralExpression.fn(2)).toEqual("words")
+      expect(argument.argument).toEqual("y")
+
+    it "which shall be called before processing", ->
+      granula.compile("en", "a").apply customInterpolator
+      expect(customInterpolator.begin).toHaveBeenCalled()
+
+    it "which shall be called after processing", ->
+      res = granula.compile("en", "a").apply customInterpolator
+      expect(customInterpolator.end).toHaveBeenCalled()
+
+    it "which may return new result in 'end' method", ->
+      customInterpolator.string.andReturn "cde"
+      customInterpolator.end.andReturn "test"
+      res = granula.compile("en", "a").apply customInterpolator
+      expect(res).toEqual("test")
+
+    it "which shall return interpolation concatenation if 'end' method returns undefined", ->
+      customInterpolator.string.andReturn "cde"
+      customInterpolator.end.andReturn undefined
+      res = granula.compile("en", "abc").apply customInterpolator
+      expect(res).toEqual("cde")
+
+    it "even there is no methods", ->
+      emptyInterpolator = {}
+      res = granula.compile("en", "there is {{0}} method(s) here").apply emptyInterpolator, 4
+      expect(res).toEqual("there is   here")
+
 

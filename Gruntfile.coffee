@@ -50,4 +50,4 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-karma'
   grunt.loadNpmTasks 'grunt-jasmine-node'
   grunt.registerTask "build", ["coffee:dev", "browserify:dev"]
-  grunt.registerTask "test", ["build", "coffee:test", "jasmine_node:run"]
+  grunt.registerTask "test", ["build", "coffee:test", "jasmine_node:run", "karma:run"]
