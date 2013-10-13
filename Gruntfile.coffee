@@ -38,9 +38,12 @@ module.exports = (grunt) ->
           'build/angularjs/granula.js': ["src/granula/granula.js", "src/angular/granula.js"]
           'build/browser/granula.js': ["src/granula/granula.js", "src/browser/granula.js"]
     "watch":
-      "test":
-        "files": ["src/**/*.coffee", "test/**/*.coffee"]
-        "tasks": ["test"]
+      "common":
+        "files": ["src/granula/**/*.coffee", "test/node/granula/**/*.coffee"]
+        "tasks": ["common-test", "angular-test"]
+      "angular-only":
+        "files": ["src/angular/**/*.coffee", "test/angular/**/*.coffee"]
+        "tasks": ["angular-test"]
 
   }
 
@@ -50,4 +53,6 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-karma'
   grunt.loadNpmTasks 'grunt-jasmine-node'
   grunt.registerTask "build", ["coffee:dev", "browserify:dev"]
+  grunt.registerTask "common-test", ["build", "coffee:test", "jasmine_node:run"]
+  grunt.registerTask "angular-test", ["build", "coffee:test", "karma:background:run"]
   grunt.registerTask "test", ["build", "coffee:test", "jasmine_node:run", "karma:run"]
