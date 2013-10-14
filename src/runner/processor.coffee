@@ -2,7 +2,7 @@ granulaCtor = require('../granula/granula')
 _ = require('underscore')
 keys = require('../granula/keys')
 
-TAGS_TO_TRANSLATE = ["title", "alt", "placeholder"]
+ATTRS_TO_TRANSLATE = ["title", "alt", "placeholder"]
 TAGS_TO_IGNORE = ["script", "link", "style"]
 ATTR_TO_IGNORE = "gr-skip"
 
@@ -40,7 +40,7 @@ module.exports = ->
       warnings: ["subtags"],
       wordsLimitForKey: 10,
       replaceSpaces: false,
-      tagsToTranslate: TAGS_TO_TRANSLATE
+      attrsToTranslate: ATTRS_TO_TRANSLATE
     })
 
     shallProcess =
@@ -49,7 +49,7 @@ module.exports = ->
 
     getAttrs =
       marked: (element) -> htmlDocument.getAttribute(element, "gr-attrs")?.split(",") ? []
-      all: (element) -> options.tagsToTranslate.filter (attr) -> htmlDocument.hasAttribute(element, attr)
+      all: (element) -> options.attrsToTranslate.filter (attr) -> htmlDocument.hasAttribute(element, attr)
 
     getKey =
       alwaysFromText: (text, attribute, path) ->

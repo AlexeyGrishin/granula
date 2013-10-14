@@ -1,15 +1,3 @@
-(function(cb) {
-  cb({
-
-  })
-})(function(options) {
-  if (typeof module !== 'undefined' && module.exports) {
-    module.exports = options;
-  }
-  else {
-    this.angular.config(["grService", function(grServiceProvider) {
-      grServiceProvider.setOptions(options)
-    }])
-  }
-
-});
+angular.module('granula').config(["grServiceProvider", function(grServiceProvider) {
+  grServiceProvider.config({"onlyMarked":true,"textAsKey":"nokey","wordsLimitForKey":10,"replaceSpaces":false,"attrsToTranslate":["title","alt","placeholder"],"warnings":["subtags"]})
+}])

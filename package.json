@@ -5,7 +5,8 @@
   "dependencies": {
     "wrench": "~1.5.1",
     "htmlparser2": "~3.3.0",
-    "underscore": "~1.5.2"
+    "underscore": "~1.5.2",
+    "optimist": "~0.6.0"
   },
   "devDependencies": {
     "coffee-script": "~1.6.3",
@@ -28,5 +29,8 @@
   },
   "scripts": {
     "test": "grunt test"
+  },
+  "bin": {
+    "granula": "node ./bin/granula"
   }
 }

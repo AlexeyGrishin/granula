@@ -33,6 +33,7 @@ angular.module('granula').provider 'grService', ->
     argument: (ctx, {argName}) ->
       "{{#{mapArgument(argName)}}}"
     pluralExpression: (ctx, {word, suffixes}, {argName}) ->
+      #TODO: do I really need it? why cannot I interpolate my own way?
       "{{#{removeOwnDirectives(mapArgument(argName))} | grPluralize:'#{word}(#{suffixes.join(',')})'}}"
     end: ->
 
@@ -44,6 +45,8 @@ angular.module('granula').provider 'grService', ->
 
   peCache = {}
 
+  config: (options) ->
+    #TODO: use config
   $get: ($rootScope) ->
 
     wrap = (language, dataToWrap) ->
