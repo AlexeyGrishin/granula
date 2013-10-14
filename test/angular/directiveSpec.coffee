@@ -95,23 +95,23 @@ describe "gr-attrs directive", ->
       html = (key) ->
         $compile(
           """
-          <span gr-attrs="{title: #{key}}" title="Hello {{name}}"></span>
+          <span gr-attrs="title" #{if key then 'gr-key-title="' +key + '"' else ''} title="Hello {{name}}"></span>
           """
         )
 
   it "shall translate specified attributes", ->
     service.setLanguage "ru"
-    expect(dom(html("'key1'"), name: "Bob").attr("title")).toEqual("Привет Bob")
+    expect(dom(html("key1"), name: "Bob").attr("title")).toEqual("Привет Bob")
 
   it "shall translate specified attributes for dynamic keys", ->
     service.setLanguage "ru"
     service.save "key1", "Holla {{name}}", "en"
-    expect(dom(html("keyVal + '1'"), {name: "Bob", keyVal: "key"}).attr("title")).toEqual("Привет Bob")
+    expect(dom(html("{{keyVal + '1'}}"), {name: "Bob", keyVal: "key"}).attr("title")).toEqual("Привет Bob")
 
   it "shall use attribute value as key if it is not specified", ->
     service.setLanguage "ru"
     service.save "Hello {{name}}", "Привет {{name}}", "ru"
-    expect(dom(html("true"), name: "Bob").attr("title")).toEqual("Привет Bob")
+    expect(dom(html(), name: "Bob").attr("title")).toEqual("Привет Bob")
 
 
 
@@ -119,7 +119,7 @@ describe "gr-attrs directive", ->
     inject ($compile) ->
       html = (keyTitle, keyAlt, keyText) -> $compile(
         """
-        <button gr-attrs="{title: #{keyTitle}, alt: #{keyAlt}}" gr-key="#{keyText}"
+        <button gr-attrs="title,alt" gr-key-title="#{keyTitle}" gr-key-alt="#{keyAlt}" gr-key="#{keyText}"
           title="Click to continue" alt="One of {{buttons}} button(s)">OK</button>
         """
       )
@@ -129,7 +129,7 @@ describe "gr-attrs directive", ->
     service.save "key3", "Да будет так", "ru"
 
     service.setLanguage "ru"
-    dom1 = dom(html("'key1'", "'key2'", "key3"), buttons: 3)
+    dom1 = dom(html("key1", "key2", "key3"), buttons: 3)
     expect(dom1.text()).toEqual("Да будет так")
     expect(dom1.attr("title")).toEqual("Нажмите для продолжения")
     expect(dom1.attr("alt")).toEqual("Одна из 3 кнопок")

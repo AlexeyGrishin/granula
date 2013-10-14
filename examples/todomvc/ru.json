@@ -1,0 +1,16 @@
+{
+  "AngularJS_•_TodoMVC": "AngularJS • TodoMVC",
+  "todos": "дела",
+  "Mark all as complete": "Пометить все как завершенное",
+  "What needs to be done?": "Что вы планируете сделать?",
+  "items-left": " {{remainingCount}} задани(е,я,й) осталось ",
+  "All": "Все",
+  "Active": "Активные",
+  "Completed": "Завершенные",
+  "clear-completed": "Удалить выполненные \\({{completedCount}})",
+  "items-left-title": "{{remainingCount}} из {{completedCount+remainingCount}}-(го,х,ти) задани(я,й,й)",
+  "Double-click to edit a todo": "Двойной щелчок чтобы отредактировать задание",
+  "Credits: ": "Авторы: ",
+  "Part of ": "Часть проекта ",
+  "TodoMVC": "TodoMVC"
+}

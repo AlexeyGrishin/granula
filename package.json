@@ -2,7 +2,11 @@
   "name": "granula",
   "version": "1.0.0",
   "author": "Alexey.Grishin@gmail.com",
-  "dependencies": {},
+  "dependencies": {
+    "wrench": "~1.5.1",
+    "htmlparser2": "~3.3.0",
+    "underscore": "~1.5.2"
+  },
   "devDependencies": {
     "coffee-script": "~1.6.3",
     "grunt-contrib-coffee": "~0.7.0",

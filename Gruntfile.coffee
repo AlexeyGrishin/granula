@@ -38,6 +38,9 @@ module.exports = (grunt) ->
           'build/angularjs/granula.js': ["src/granula/granula.js", "src/angular/granula.js"]
           'build/browser/granula.js': ["src/granula/granula.js", "src/browser/granula.js"]
     "watch":
+      "runner":
+        "files": ["src/granula/**/*.coffee", "src/runner/**/*.coffee"]
+        "tasks": ["build"]
       "common":
         "files": ["src/granula/**/*.coffee", "test/node/granula/**/*.coffee"]
         "tasks": ["common-test", "angular-test"]
