@@ -177,3 +177,47 @@ describe "gr-lang directive", ->
     $scope.lang = "ua"
     $scope.$digest()
     expect(dom1.text().trim()).toEqual("Увага!")
+
+
+describe 'gr-lang attribute for script', ->
+
+  beforeEach ->
+    module('granula')
+
+  it 'shall load language definitions from script contents', ->
+    dom = """
+          <script gr-lang='it' type='granula/lang'>
+          {"key1": "value1"}
+          </script>
+          """
+    inject ($compile, grService) ->
+      $compile(dom)
+      expect(grService.canTranslate("key1", "it")).toBeTruthy()
+
+  it 'shall asynchronously load language definitions from source when sцitching', ->
+    dom = """
+            <script gr-lang='it' src='it.json' type='granula/lang'></script>
+          """
+    inject ($compile, grService, $rootScope, $httpBackend) ->
+      onStartChange = jasmine.createSpy()
+      onChange = jasmine.createSpy()
+      $rootScope.$on 'gr-lang-load', onStartChange
+      $rootScope.$on 'gr-lang-changed', onChange
+
+      $compile(dom)
+      $httpBackend.verifyNoOutstandingRequest()
+      expect(grService.canTranslate("key1", "it")).toBeFalsy()
+
+      $httpBackend.expectGET('it.json').respond({"key1": "value"})
+
+      grService.setLanguage("it")
+      expect(onStartChange).toHaveBeenCalled()
+      expect(onChange).not.toHaveBeenCalled()
+
+      $httpBackend.flush()
+      expect(onChange).toHaveBeenCalled()
+      expect(grService.canTranslate("key1", "it")).toBeTruthy()
+
+      $httpBackend.verifyNoOutstandingExpectation()
+
+

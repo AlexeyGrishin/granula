@@ -1,0 +1,10 @@
+#!/usr/bin/env node
+// Try to find a local install
+var dir = path.resolve(process.cwd(), 'node_modules', 'granula', 'build');
+
+// Check if the local install exists else we use the install we are in
+if (!fs.existsSync(dir)) {
+  dir = path.join('..', 'lib');
+}
+
+var cli = require(path.join(dir, 'runner/cli'));

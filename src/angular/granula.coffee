@@ -3,11 +3,19 @@ keys = require('../granula/keys')
 
 angular.module('granula', [])
 
+#TODO: copy-paste from runner.coffee, move to separate fie
+defaultOptions =
+  textAsKey: "nokey",
+  wordsLimitForKey: 10,
+  replaceSpaces: false,
+  generateSettingsFile: "settings.js",
+
+
 angular.module('granula').provider 'grService', ->
 
   granula = granulaCtor()
-
   argumentNamesByKey = {}
+  options = defaultOptions
 
   removeOwnDirectives = (argName) ->
     foundAt = argName.search(/\|\s*grPluralize/i)
@@ -26,7 +34,6 @@ angular.module('granula').provider 'grService', ->
         argumentNamesByKey[key].push name if argumentNamesByKey[key].indexOf(name) == -1
         name
 
-
   angularInterpolator = (mapArgument = (name) -> name) ->
     begin: ->
     string: (ctx, text) -> text
@@ -44,51 +51,98 @@ angular.module('granula').provider 'grService', ->
       fn(context.attrs[1])
 
   peCache = {}
+  asyncLoaders = {}
 
-  config: (options) ->
-    #TODO: use config
+  config: (opts) ->
+    angular.extend options, defaultOptions, opts
+
   $get: ($rootScope) ->
-
     wrap = (language, dataToWrap) ->
       data = {}
       data[language] = dataToWrap ? {}
       data
 
+    # Currently shown language
+    # Use @setLanguage method to change it, or 'gr-lang' directive
     language: "en"
+
+    # Language of the text on page
+    # Use @setOriginalLanguage to change it, or 'gr-lang' directive
     originalLanguage: "en"
 
+    # Generates phrase key for text with specified gr-key attribute depending on settings
+    # Settings could be changed using grServiceProvider.config
+    toKey: (attribute, text) ->
+      keys.toKey(attribute, text, options)
+
+    # Returns true if current language is original language
     isOriginal: ->
       @language == @originalLanguage
 
-    registerOriginal: ->
+    _registerOriginal: ->
       @register @originalLanguage
-      @registerOriginal = ->
+      @_registerOriginal = ->
 
+    # Changes original language
     setOriginalLanguage: (lang) ->
       @originalLanguage = lang
-      @registerOriginal()
+      @_registerOriginal()
 
+    # Changes current language.
+    # This method sends the following events to the $rootScope:
+    # - gr-lang-load - if language data shall be loaded first
+    # - gr-lang-load-error - if language data cannot be loaded
+    # - gr-lang-changed - when language actually switched and data is loaded
     setLanguage: (lang) ->
       return if lang is @language
-      @language = lang
-      $rootScope.$broadcast 'gr-lang-changed', lang
+      loadAsync = (onLoad) =>
+        $rootScope.$broadcast 'gr-lang-load', lang
+        asyncLoaders[lang] (error, data) =>
+          if error
+            console.error(error)
+            $rootScope.$broadcas 'gr-lang-load-error', error
+          else
+            @register(lang, data)
+            delete asyncLoaders[lang]
+            onLoad()
+      loadSync = =>
+        @language = lang
+        $rootScope.$broadcast 'gr-lang-changed', lang
+      if asyncLoaders[lang] then loadAsync -> loadSync() else loadSync()
 
-    register: (language) ->
+    # Registers language in service with provided data or async loader.
+    # If async loader provided then it will be called before switching to the language.
+    # Data format: {key: value}
+    # Loader format: function(cb) {... cb(error, data)}
+    register: (language, data_or_loader) ->
       throw new Error("language shall be defined!") if not language
-      granula.load wrap(language)
+      if angular.isFunction(data_or_loader)
+        asyncLoaders[language] = data_or_loader
+      else
+        granula.load wrap(language, data_or_loader)
 
-    load: (values, language) ->
-      throw new Error("language shall be defined!") if not language
-      granula.load wrap(language, values)
+    # Adds data to the language
+    # Same as @register(language, data), here for back compatibility
+    # TODO: remove and fix tests
+    load: (data, language) ->
+      @register(language, data)
 
+    # Adds one key/pattern pair to the language
+    # Same as @register(language, {key:pattern})
     save: (key, pattern, language = @originalLanguage) ->
       data = wrap(language)
       data[language][key] = pattern
       granula.load data
 
+    # Returns true if there is pattern for specified key and language
+    canTranslate: (key, language = @language) ->
+      granula.canTranslate language, key
+
     compile: (key, language = @language, skipIfEmpty = true) ->
-      @registerOriginal()
-      #TODO: uhly magic
+      @_registerOriginal()
+      # It is done in order to store argument names from original text
+      # before switching to another language (because another language has numeric attributes (like {{1}}) in text
+      # and we need to know how to map them)
       if argumentNamesByKey[key] is undefined and language isnt @originalLanguage
         @compile key, @originalLanguage, false
       try
@@ -98,61 +152,42 @@ angular.module('granula').provider 'grService', ->
         console.error(e.message, e)
         return ""   #continue working
 
+    # Evaluates plural expression with the specified number
     plural: (expression, value) ->
       compiled = peCache[expression] ? (=>
         peCache[expression] = granula.compile(@language, "#{expression}:1")
       )()
       compiled.apply pluralInterpolator(), value
 
-#TODO: change order of args, {{'error(s)' | grPluralize:count}} looks more preferable
 angular.module('granula').filter 'grPluralize', (grService) ->
   (input, pluralExpression) ->
     grService.plural(pluralExpression, input)
 
+angular.module('granula').directive 'grStatus', ->
+  (scope, el) ->
+    scope.$on 'gr-lang-load', ->
+      el.addClass "gr-lang-load"
+    scope.$on 'gr-lang-load-error', ->
+      el.removeClass "gr-lang-load"
+    scope.$on 'gr-lang-changed', ->
+      el.removeClass "gr-lang-load"
 
 angular.module('granula').directive 'grLang', ($rootScope, grService, $interpolate, $http)->
-  byLangLoaders = {}
   compileScript = (el, attrs) ->
     langName = attrs.grLang
     throw new Error("gr-lang for script element shall have value - name of language") if (langName ? "").length == 0
-    grService.register(langName)
     if attrs.src
-      byLangLoaders[langName] = {
-        loaded: false
-        load: (cb) ->
-          $http(method: "GET", url: attrs.src).success( (data)=>
-            @loaded = true
-            cb(data)
-          ).error(->
-            #TODO: revert somehow
-            console.error("Cannot load #{attrs.src} for language #{langName}")
-          )
-      }
-      #TODO: make async. Langage change = (send event1, switch state to 'loading', load data async, send event2, switch state back)
-      byLangLoaders[langName].load (data) ->
-        grService.load data, langName
+      grService.register langName, (cb) ->
+        $http(method: "GET", url: attrs.src).success( (data)=>
+          cb(null, data)
+        ).error(->
+          cb("Cannot load #{attrs.src} for language #{langName}")
+        )
     else
-      byLangLoaders[langName] = loaded: true
       try
-        grService.load JSON.parse(el.text()), langName
+        grService.register langName, JSON.parse(el.text())
       catch e
         throw new Error("Cannot parse json for language '#{langName}'", e)
-
-    (scope) ->
-      onLanguageChanged = ->
-        loader = byLangLoaders[grService.language]
-        if loader?.loaded == false
-          loader.load (data) ->
-            console.log "Loaded data for #{langName}"
-            grService.load data, langName
-            scope.$apply() if not scope.$$phase
-        else if grService.isOriginal() or loader?.loaded == true
-          #do nothing - it is already here, right on page
-        else
-          throw new Error("Cannot switch to language #{grService.language} - there is no data for it")
-      scope.$on 'gr-lang-changed', onLanguageChanged
-      onLanguageChanged()
-
 
   compileOther = (el, attrs) ->
     grService.setOriginalLanguage attrs.grLangOfText if attrs.grLangOfText
@@ -218,8 +253,7 @@ angular.module('granula').directive 'grAttrs', (grService, $interpolate, $parse)
     attrNames = attrs.grAttrs.split(",")
     linkFunctions = attrNames.map (attrName) ->
       attrWithKeyValue = "grKey#{attrName[0].toUpperCase() + attrName.substring(1)}"
-      #TODO: use keys.textToKey options
-      keyExpr = attrs[attrWithKeyValue] ? keys.textToKey(el.attr(attrName))
+      keyExpr = grService.toKey(attrs[attrWithKeyValue], el.attr(attrName))
       interpolateKey = $interpolate(keyExpr, true) if attrs[attrWithKeyValue]
       startKey = if interpolateKey then null else keyExpr
       processDomText grService, $interpolate, interpolateKey, startKey, (->el.attr(attrName)), (val) -> el.attr(attrName, val)
@@ -230,8 +264,7 @@ angular.module('granula').directive 'grAttrs', (grService, $interpolate, $parse)
 
 angular.module('granula').directive 'grKey', (grService, $interpolate) ->
   compile: (el, attrs) ->
-    #TODO: use keys.textToKey options
-    keyExpr = if attrs.grKey.length > 0 then attrs.grKey else keys.textToKey(el.text())
+    keyExpr = grService.toKey(attrs.grKey, el.text())
     interpolateKey = $interpolate(keyExpr, true) if attrs.grKey
     startKey = if interpolateKey then null else keyExpr
     {link} = processDomText(grService, $interpolate, interpolateKey, startKey, (-> el.text()), ((val) -> el.text(val)))

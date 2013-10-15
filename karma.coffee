@@ -7,6 +7,11 @@ module.exports = (config) ->
       "build/angularjs/granula.js",
       "test/angular/**/*.js"]
     browsers: ['PhantomJS']
-    reporters: ['progress', 'junit']
+    reporters: ['progress', 'junit', 'coverage']
+    preprocessors:
+      "build/angularjs/granula.js": ['coverage']
     junitReporter:
       outputFile: 'test-reports/client.xml',
+    coverageReporter:
+      type: 'html'
+      dir: 'test-reports/'

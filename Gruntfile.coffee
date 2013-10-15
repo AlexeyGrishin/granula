@@ -32,6 +32,21 @@ module.exports = (grunt) ->
         src: ["**/*.coffee"]
         dest: "test/angular"
         ext: ".js"
+    "copy":
+      "dev":
+        files: [{
+          expand: true
+          cwd: 'src'
+          src: ['granula/**/*.js','runner/**/*.js']
+          dest: 'build/package/'
+        },
+        {
+
+          dest: 'build/package/'
+          src: ['package.json', 'README.md', 'Granulafile.sample', 'bin/granula*']
+        }
+        ]
+
     "browserify":
       dev:
         files:
@@ -52,6 +67,7 @@ module.exports = (grunt) ->
 
   grunt.loadNpmTasks 'grunt-contrib-coffee'
   grunt.loadNpmTasks 'grunt-browserify'
+  grunt.loadNpmTasks 'grunt-contrib-copy'
   grunt.loadNpmTasks 'grunt-contrib-watch'
   grunt.loadNpmTasks 'grunt-karma'
   grunt.loadNpmTasks 'grunt-jasmine-node'

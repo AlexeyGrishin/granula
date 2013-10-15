@@ -328,4 +328,19 @@ describe "granula.compile", ->
       res = granula.compile("en", "there is {{0}} method(s) here").apply emptyInterpolator, 4
       expect(res).toEqual("there is   here")
 
+describe "granula.canTranslate", ->
 
+  beforeEach ->
+    granula = granulaCtor()
+
+  it "shall return true if there is a translation", ->
+    granula.load {en: {key1: "hello"}}
+    expect(granula.canTranslate("en", "key1")).toBeTruthy()
+
+  it "shall return false if there is no translation for specified key", ->
+    granula.load {en: {key1: "hello"}}
+    expect(granula.canTranslate("en", "key2")).toBeFalsy()
+
+  it "shall return false if there is translation but not for specified language", ->
+    granula.load {en: {key1: "hello"}}
+    expect(granula.canTranslate("ru", "key1")).toBeFalsy()

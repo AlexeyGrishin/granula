@@ -9,16 +9,6 @@ ATTR_TO_IGNORE = "gr-skip"
 #TODO: do not process empty elements
 #TODO: exclude {{}} from keys?
 module.exports = ->
-  #htmlDocument =
-  # forEach: (element) ->
-  # getText: (element) ->
-  # getAttribute: (element, attrName) ->
-  # setAttribute: (element, attrName) ->
-  #options =
-  # onlyMarked: true/false
-  # textAsKey: "always" == true, "nokey", false == "never"
-  # warnings: ["subtags"]
-  # wordsLimitForKey: 10
   granula = granulaCtor()
 
   hasSomethingToTranslate = (str) ->

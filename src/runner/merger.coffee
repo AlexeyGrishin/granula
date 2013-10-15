@@ -5,7 +5,7 @@ DELETED_KEY = "-----------------deleted"
 
 module.exports =
   merge: (oldJson, newJson, options) ->
-    options = _.defaults(options, {translateMe: "[^_^]"})
+    options = _.defaults(options, {translateMe: "✍ "})
     previouslyDeleted = oldJson[DELETED_KEY]
     oldJson = _.omit oldJson, DELETED_KEY, ADDED_KEY
     oldKeys = _.keys(oldJson)

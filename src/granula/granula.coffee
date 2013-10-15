@@ -60,6 +60,8 @@ module.exports = (options) ->
   translate: (language, key, args...) ->
     @_apply(language, key, args...)
 
+  canTranslate: (language, key) ->
+    lang[language]?[key] isnt undefined
 
   #TODO: translate and compile has different syntax
   compile: (language, pattern) ->

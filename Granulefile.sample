@@ -1,0 +1,6 @@
+//Rename to just 'Granulafile' and remove this comment (to make it a valid json)
+{
+  "src": "where-to-find-your-html",
+  "out": "where-to-put-language-files",
+  "languages": "ru,it,and-other-languages-separated-by-comma"
+}
