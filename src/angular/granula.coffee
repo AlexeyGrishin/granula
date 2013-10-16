@@ -4,12 +4,7 @@ keys = require('../granula/keys')
 angular.module('granula', [])
 
 #TODO: copy-paste from runner.coffee, move to separate fie
-defaultOptions =
-  textAsKey: "nokey",
-  wordsLimitForKey: 10,
-  replaceSpaces: false,
-  generateSettingsFile: "settings.js",
-
+defaultOptions = require('../runner/defaultOptions')
 
 angular.module('granula').provider 'grService', ->
 
@@ -121,12 +116,6 @@ angular.module('granula').provider 'grService', ->
       else
         granula.load wrap(language, data_or_loader)
 
-    # Adds data to the language
-    # Same as @register(language, data), here for back compatibility
-    # TODO: remove and fix tests
-    load: (data, language) ->
-      @register(language, data)
-
     # Adds one key/pattern pair to the language
     # Same as @register(language, {key:pattern})
     save: (key, pattern, language = @originalLanguage) ->
@@ -137,6 +126,25 @@ angular.module('granula').provider 'grService', ->
     # Returns true if there is pattern for specified key and language
     canTranslate: (key, language = @language) ->
       granula.canTranslate language, key
+
+    # To use in javascript services, controllers, etc. Options may contain:
+    # - key (see below)
+    # - language - if not defined then current will be used
+    # Depending on options provided in grServiceProvider.config
+    # - if textAsKey == 'never' then key is required and will be used
+    # - if textAsKey == 'nokey' then key is not required and, if absent, text will be used instead
+    # - if textAsKey == 'always' then key will be ignored
+    #TODO: untested!
+    translate: (pattern, options = {}, args...) ->
+      if angular.isObject(options)
+        angular.extend options, {@language}
+      else
+        args.unshift(options)
+        options = {@language}
+      realKey = @toKey options.key, pattern
+      if @isOriginal()
+        @save realKey, pattern, options.language
+      granula.translate realKey, options.language, args
 
     compile: (key, language = @language, skipIfEmpty = true) ->
       @_registerOriginal()

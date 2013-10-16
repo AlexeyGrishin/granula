@@ -41,29 +41,15 @@ module.exports = ->
       marked: (element) -> htmlDocument.getAttribute(element, "gr-attrs")?.split(",") ? []
       all: (element) -> options.attrsToTranslate.filter (attr) -> htmlDocument.hasAttribute(element, attr)
 
-    getKey =
-      alwaysFromText: (text, attribute, path) ->
-        keys.textToKey(text, options)
-      alwaysFromAttribute: (text, attribute, path) ->
-        if attribute is undefined
-          log.addError "Element that shall be translated does not have lang key: #{path()}: '#{text}'"
-        attribute
-      fromAttributeIfDefined: (text, attribute, path) ->
-        res = attribute ? keys.textToKey(text, options)
-        if not res
-          log.addError "Element that shall be translated does not have lang key or text that shall be used instead: #{path()}"
-        res
-
-
 
     elementIterator = {
       shallProcess: if options.onlyMarked then shallProcess.marked else shallProcess.all,
       getAttrs: if options.onlyMarked then getAttrs.marked else getAttrs.all,
-      getKey: switch options.textAsKey
-        when true, "always" then getKey.alwaysFromText
-        when false, "never" then getKey.alwaysFromAttribute
-        when "nokey" then getKey.fromAttributeIfDefined
-        else throw new Error("Unexpected value for 'textAsKey' option - '#{options.textAsKey}'. Expected - true, 'always', 'nokey', 'never', false")
+      getKey:  (text, attribute, path) ->
+        try
+          keys.toKey(attribute, text, options)
+        catch e
+          log.addError e.message + " (#{path()}"
 
       shallProcessElement: (element) ->
         not _.contains(TAGS_TO_IGNORE, element.name) and
@@ -74,11 +60,14 @@ module.exports = ->
         return if not @shallProcessElement(element)
         #1 - text
         textNodes = htmlDocument.getText(element)#TODO: process other text nodes as well, or add warning
+        hasChildren = htmlDocument.getChildNodes(element).length > 0
+        if hasChildren
+          log.addError("Element has subnodes. Unfortunately granula does not support such case yet, please add gr-key to each of subnodes separately or wrap your text nodes in some elements : #{htmlDocument.getPath(element)}, subnodes: #{_.pluck(element.children, 'name').join(',')}")
+          return
         if textNodes.length > 1
           log.addWarning("Element has more than 1 text node, only first will be processed: #{htmlDocument.getPath(element)}")
-          console.log (textNodes.map (tn) -> "  >> #{tn} <<").join("\n")
         text = textNodes[0]
-        if hasSomethingToTranslate(text)
+        if hasSomethingToTranslate(text) and htmlDocument.hasAttribute(element, 'gr-key')
           key = @getKey text, htmlDocument.getAttribute(element, "gr-key"), -> htmlDocument.getPath(element)
           @processKey(key, text)
         #2 - attrs
@@ -95,7 +84,6 @@ module.exports = ->
           log.addWarning("Key '#{key}' met again with another value: was '#{lang[key]}', now '#{text}'") if lang[key] != text
         else
           lang[key] = text
-
     }
 
 

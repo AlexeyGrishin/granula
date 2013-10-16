@@ -1,1 +1,1 @@
-@node ../build/runner/cli.js %*
+@node ../package/runner/cli.js %*

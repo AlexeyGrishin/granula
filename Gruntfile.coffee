@@ -41,8 +41,7 @@ module.exports = (grunt) ->
           dest: 'build/package/'
         },
         {
-
-          dest: 'build/package/'
+          dest: 'build/'
           src: ['package.json', 'README.md', 'Granulafile.sample', 'bin/granula*']
         }
         ]
@@ -54,8 +53,8 @@ module.exports = (grunt) ->
           'build/browser/granula.js': ["src/granula/granula.js", "src/browser/granula.js"]
     "watch":
       "runner":
-        "files": ["src/granula/**/*.coffee", "src/runner/**/*.coffee"]
-        "tasks": ["build"]
+        "files": ["src/runner/**/*.coffee", "test/node/runner/**/*.coffee"]
+        "tasks": ["common-test"]
       "common":
         "files": ["src/granula/**/*.coffee", "test/node/granula/**/*.coffee"]
         "tasks": ["common-test", "angular-test"]
@@ -71,7 +70,7 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-contrib-watch'
   grunt.loadNpmTasks 'grunt-karma'
   grunt.loadNpmTasks 'grunt-jasmine-node'
-  grunt.registerTask "build", ["coffee:dev", "browserify:dev"]
+  grunt.registerTask "build", ["coffee:dev", "browserify:dev", "copy:dev"]
   grunt.registerTask "common-test", ["build", "coffee:test", "jasmine_node:run"]
   grunt.registerTask "angular-test", ["build", "coffee:test", "karma:background:run"]
   grunt.registerTask "test", ["build", "coffee:test", "jasmine_node:run", "karma:run"]

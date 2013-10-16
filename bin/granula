@@ -7,4 +7,4 @@ if (!fs.existsSync(dir)) {
   dir = path.join('..', 'lib');
 }
 
-var cli = require(path.join(dir, 'runner/cli'));
+var cli = require(path.join(dir, 'package/runner/cli'));

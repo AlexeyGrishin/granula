@@ -3,41 +3,6 @@
 {context} = require('./compile/context')
 pluralization = require('./pluralization')()
 
-
-
-notEmpty = (str) -> str.length > 0
-
-precompile = (text, parsers) ->
-  ctx =
-    parts: []
-
-  currentPos = 0
-  positions = parsers.map (p) ->p.nextPosition(text, 0)
-  isEnd = -> positions.every (pos) -> pos == -1
-  while not(isEnd())
-    nearestPosition = Math.min.apply(null, positions.filter (p) -> p > -1)
-    parserIdx = positions.indexOf(nearestPosition)
-    parser = parsers[parserIdx]
-    substr = text.substring(currentPos, nearestPosition)
-    ctx.parts.push(justText(substr)) if notEmpty(substr)
-    {part, currentPos} = parser.process text, nearestPosition, ctx
-    ctx.parts.push(part)
-    positions.forEach (pos, idx) ->
-      if pos < currentPos
-        positions[idx] = parsers[idx].nextPosition(text, currentPos)
-  remaining = text.substring(currentPos)
-  ctx.parts.push(justText(remaining)) if notEmpty(remaining)
-  ctx.parts.forEach (part, idx) ->
-    part.link(ctx, idx) if part.link
-
-
-  apply: (args, interpolator) ->
-    context(args, interpolator).apply (context)->
-      (ctx.parts.map (p) ->p.apply(context)).join("")
-
-
-
-
 module.exports = (options) ->
 
   lang = {}
@@ -55,7 +20,6 @@ module.exports = (options) ->
           #do nothing
         else
           lang[langName][key] = value
-
 
   translate: (language, key, args...) ->
     @_apply(language, key, args...)
@@ -101,9 +65,45 @@ module.exports = (options) ->
   _apply: (language, key, args...) ->
     @_precompiled(language, key).apply(args, @defaultInterpolator)
 
-
   _get: (language, key) ->
     throw new Error("Language '#{language}' was not initialized with 'load' method") if not lang[language]
     val = lang[language][key]
     throw new Error("There is no definition for '#{key}' in language '#{language}'") if not val
     val
+
+
+
+notEmpty = (str) -> str.length > 0
+
+precompile = (text, parsers) ->
+  ctx =
+    parts: []
+
+  currentPos = 0
+  positions = parsers.map (p) ->p.nextPosition(text, 0)
+  isEnd = -> positions.every (pos) -> pos == -1
+  while not(isEnd())
+    nearestPosition = Math.min.apply(null, positions.filter (p) -> p > -1)
+    parserIdx = positions.indexOf(nearestPosition)
+    parser = parsers[parserIdx]
+    substr = text.substring(currentPos, nearestPosition)
+    ctx.parts.push(justText(substr)) if notEmpty(substr)
+    {part, currentPos} = parser.process text, nearestPosition, ctx
+    ctx.parts.push(part)
+    positions.forEach (pos, idx) ->
+      if pos < currentPos
+        positions[idx] = parsers[idx].nextPosition(text, currentPos)
+  remaining = text.substring(currentPos)
+  ctx.parts.push(justText(remaining)) if notEmpty(remaining)
+  ctx.parts.forEach (part, idx) ->
+    part.link(ctx, idx) if part.link
+
+
+  apply: (args, interpolator) ->
+    context(args, interpolator).apply (context)->
+      (ctx.parts.map (p) ->p.apply(context)).join("")
+
+
+
+
+

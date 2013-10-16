@@ -80,6 +80,7 @@ describe "grKey directive", ->
     dom1 = dom(html(), tests:5)
     expect(dom1.text()).toEqual("У нас 5 тестов")
 
+
 describe "gr-attrs directive", ->
 
   html = null

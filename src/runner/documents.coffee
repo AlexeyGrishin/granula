@@ -25,6 +25,10 @@ module.exports.htmlDocument = (html) ->
   getText: (element) ->
     element.children?.filter((ch) -> ch.type=='text').filter((ch)->ch.data.trim().length > 0).map((ch) -> ch.data) ? []
 
+  getChildNodes: (element) ->
+    element.children?.filter((ch) -> ch.type != 'text') ? []
+
+
   hasAttribute: (element, attribute) ->
     element.attribs?[attribute] isnt undefined
 
