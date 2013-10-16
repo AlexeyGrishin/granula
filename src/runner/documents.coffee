@@ -1,4 +1,3 @@
-cheerio = require('cheerio')
 htmlparser2 = require('htmlparser2')
 _ = require('underscore')
 

@@ -1,6 +1,6 @@
 {
   "name": "granula",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Alexey.Grishin@gmail.com",
   "dependencies": {
     "wrench": "~1.5.1",
@@ -33,6 +33,6 @@
     "test": "grunt test"
   },
   "bin": {
-    "granula": "node ./bin/granula"
+    "granula": "bin/granula"
   }
 }
