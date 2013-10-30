@@ -344,3 +344,15 @@ describe "granula.canTranslate", ->
   it "shall return false if there is translation but not for specified language", ->
     granula.load {en: {key1: "hello"}}
     expect(granula.canTranslate("ru", "key1")).toBeFalsy()
+
+describe "granula.canTranslateTo", ->
+
+  beforeEach ->
+    granula = granulaCtor()
+
+  it "shall return true if language is defined", ->
+    granula.load {en: {}}
+    expect(granula.canTranslateTo("en")).toBeTruthy()
+
+  it "shall return true if language is not defined", ->
+    expect(granula.canTranslateTo("en")).toBeFalsy()

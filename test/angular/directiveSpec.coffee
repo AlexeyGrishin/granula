@@ -81,6 +81,44 @@ describe "grKey directive", ->
     expect(dom1.text()).toEqual("У нас 5 тестов")
 
 
+  describe "within ng-repeat", ->
+    noInterpolation = null
+    interpolation = null
+    beforeEach ->
+      inject (_$compile_) ->
+        noInterpolation = -> _$compile_ """
+                             <div>
+                             <span ng-repeat='b in bs' gr-key='key1'>Test</span>
+                             </div>
+                             """
+        interpolation = -> _$compile_ """
+                                        <div>
+                                        <span ng-repeat='b in bs' gr-key='key2'>{{b}} test(s)</span>
+                                        </div>
+                                        """
+
+      service.save "key1", "Translated", "ru"
+      service.save "key2", "{{1}} тест(,а,ов)", "ru"
+
+
+    it "shall translate each text without interpolation", ->
+      dom1 = dom(noInterpolation(), bs: [1,2])
+      service.setLanguage "ru"
+      $scope.$digest()
+      spans = dom1.find("span")
+      expect(spans.eq(0).text()).toEqual("Translated")
+      expect(spans.eq(1).text()).toEqual("Translated")
+
+    it "shall translate each etxt with interpolation", ->
+      dom1 = dom(interpolation(), bs: [1,2])
+      service.setLanguage "ru"
+      $scope.$digest()
+      spans = dom1.find("span")
+      expect(spans.eq(0).text()).toEqual("1 тест")
+      expect(spans.eq(1).text()).toEqual("2 теста")
+
+
+
 describe "gr-attrs directive", ->
 
   html = null
@@ -220,5 +258,28 @@ describe 'gr-lang attribute for script', ->
       expect(grService.canTranslate("key1", "it")).toBeTruthy()
 
       $httpBackend.verifyNoOutstandingExpectation()
+
+  it 'shall not produce errors when language switched to another one during load', ->
+    dom = """
+          <script gr-lang='it' src='it.json' type='granula/lang'></script>
+          <div gr-lang='it'></div>
+          """
+    inject ($compile, grService, $rootScope, $httpBackend) ->
+      onStartChange = jasmine.createSpy()
+      onChange = jasmine.createSpy()
+      $rootScope.$on 'gr-lang-load', onStartChange
+
+      $rootScope.$on 'gr-lang-changed', onChange
+
+      $httpBackend.expectGET('it.json').respond({"key1": "value"})
+      $compile(dom)
+      expect(onStartChange).toHaveBeenCalled()
+      expect(onChange).not.toHaveBeenCalled()
+      grService.setLanguage('it')
+      expect(onChange).not.toHaveBeenCalled()
+      $httpBackend.flush()
+      expect(onChange).toHaveBeenCalled()
+      $httpBackend.verifyNoOutstandingExpectation()
+      $httpBackend.verifyNoOutstandingRequest()
 
 

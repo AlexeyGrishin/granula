@@ -90,12 +90,14 @@ angular.module('granula').provider 'grService', ->
     # - gr-lang-changed - when language actually switched and data is loaded
     setLanguage: (lang) ->
       return if lang is @language
+      return if asyncLoaders[lang]?.loading
       loadAsync = (onLoad) =>
         $rootScope.$broadcast 'gr-lang-load', lang
+        asyncLoaders[lang].loading = true
         asyncLoaders[lang] (error, data) =>
           if error
             console.error(error)
-            $rootScope.$broadcas 'gr-lang-load-error', error
+            $rootScope.$broadcast 'gr-lang-load-error', error
           else
             @register(lang, data)
             delete asyncLoaders[lang]
@@ -126,6 +128,10 @@ angular.module('granula').provider 'grService', ->
     # Returns true if there is pattern for specified key and language
     canTranslate: (key, language = @language) ->
       granula.canTranslate language, key
+
+    # Returns true if there is data (even loading) for specified language
+    canTranslateTo: (language = @language) ->
+      granula.canTranslateTo(language) or asyncLoaders[language]
 
     # To use in javascript services, controllers, etc. Options may contain:
     # - key (see below)
@@ -196,11 +202,12 @@ angular.module('granula').directive 'grLang', ($rootScope, grService, $interpola
         grService.register langName, JSON.parse(el.text())
       catch e
         throw new Error("Cannot parse json for language '#{langName}'", e)
+    undefined #otherwise it returns response from register call and angular decides it is link function...
 
   compileOther = (el, attrs) ->
     grService.setOriginalLanguage attrs.grLangOfText if attrs.grLangOfText
     requireInterpolation = $interpolate(attrs.grLang, true)
-    if requireInterpolation
+    if requireInterpolation or not grService.canTranslateTo(attrs.grLang)
       grService.setLanguage grService.originalLanguage
     else
       grService.setLanguage attrs.grLang
@@ -216,27 +223,27 @@ angular.module('granula').directive 'grLang', ($rootScope, grService, $interpola
 
 
 
-processDomText = (grService, $interpolate, interpolateKey, startKey, readTextFn, writeTextFn) ->
-  pattern = readTextFn()
+processDomText = (grService, $interpolate, interpolateKey, startKey, readTextFn, writeTextFn, el) ->
+  pattern = readTextFn(el)
   if startKey
     grService.save startKey, pattern
     compiled = grService.compile(startKey)
     interpolateFn = $interpolate(compiled, true)
   if interpolateFn or interpolateKey
-    writeTextFn('') # to prevent auto-binding made by angular.js
+    writeTextFn(el, '') # to prevent auto-binding made by angular.js
 
-  link: (scope) ->
+  link: (scope, el) ->
     outputFn = interpolateFn
     key = startKey
 
     onLanguageChanged = () ->
       outputFn = $interpolate(grService.compile(key))
-      writeTextFn(outputFn(scope))
+      writeTextFn(el, outputFn(scope))
 
     onVariablesChanged = (text) ->
-      return writeTextFn(text) if grService.language is grService.originalLanguage
+      return writeTextFn(el, text) if grService.language is grService.originalLanguage
       throw new Error("outputFn is undefined but it shall not be") if not outputFn
-      writeTextFn(outputFn(scope))
+      writeTextFn(el, outputFn(scope))
 
     onKeyChanged = (newKey) ->
       return if key == newKey
@@ -256,7 +263,10 @@ processDomText = (grService, $interpolate, interpolateKey, startKey, readTextFn,
 
 
 
-angular.module('granula').directive 'grAttrs', (grService, $interpolate, $parse) ->
+angular.module('granula').directive 'grAttrs', (grService, $interpolate) ->
+  read = (attrName) -> (el) ->el.attr(attrName)
+  write = (attrName) -> (el, val) -> el.attr(attrName, val)
+
   compile: (el, attrs) ->
     attrNames = attrs.grAttrs.split(",")
     linkFunctions = attrNames.map (attrName) ->
@@ -264,17 +274,22 @@ angular.module('granula').directive 'grAttrs', (grService, $interpolate, $parse)
       keyExpr = grService.toKey(attrs[attrWithKeyValue], el.attr(attrName))
       interpolateKey = $interpolate(keyExpr, true) if attrs[attrWithKeyValue]
       startKey = if interpolateKey then null else keyExpr
-      processDomText grService, $interpolate, interpolateKey, startKey, (->el.attr(attrName)), (val) -> el.attr(attrName, val)
+      {
+        link: processDomText(grService, $interpolate, interpolateKey, startKey, read(attrName), write(attrName), el).link
+        attrName: attrName
+      }
     (scope, el, attrs) ->
-      keyListeners = linkFunctions.map (l) -> l.link(scope).onKeyChanged
+      keyListeners = linkFunctions.map (l) -> l.link(scope, el).onKeyChanged
 
 
 
 angular.module('granula').directive 'grKey', (grService, $interpolate) ->
+  read = (el) -> el.text()
+  write =(el, val) -> el.text(val)
   compile: (el, attrs) ->
     keyExpr = grService.toKey(attrs.grKey, el.text())
     interpolateKey = $interpolate(keyExpr, true) if attrs.grKey
     startKey = if interpolateKey then null else keyExpr
-    {link} = processDomText(grService, $interpolate, interpolateKey, startKey, (-> el.text()), ((val) -> el.text(val)))
+    {link} = processDomText(grService, $interpolate, interpolateKey, startKey, read, write, el)
     (scope, el, attrs) ->
-      link scope, attrs
+      link scope, el

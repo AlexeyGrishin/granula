@@ -27,6 +27,9 @@ module.exports = (options) ->
   canTranslate: (language, key) ->
     lang[language]?[key] isnt undefined
 
+  canTranslateTo: (language) ->
+    lang[language] isnt undefined
+
   #TODO: translate and compile has different syntax
   compile: (language, pattern) ->
     if pattern.key
