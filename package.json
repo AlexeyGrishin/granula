@@ -1,6 +1,6 @@
 {
   "name": "granula",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "author": "Alexey.Grishin@gmail.com",
   "keywords": ["angular", "angular.js", "i18n", "translate", "pluralization"],
   "dependencies": {
