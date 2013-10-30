@@ -74,3 +74,4 @@ module.exports = (grunt) ->
   grunt.registerTask "common-test", ["build", "coffee:test", "jasmine_node:run"]
   grunt.registerTask "angular-test", ["build", "coffee:test", "karma:background:run"]
   grunt.registerTask "test", ["build", "coffee:test", "jasmine_node:run", "karma:run"]
+  grunt.registerTask "default", ["build", "test"]

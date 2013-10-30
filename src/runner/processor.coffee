@@ -59,17 +59,18 @@ module.exports = ->
       process: (element) ->
         return if not @shallProcessElement(element)
         #1 - text
-        textNodes = htmlDocument.getText(element)#TODO: process other text nodes as well, or add warning
-        hasChildren = htmlDocument.getChildNodes(element).length > 0
-        if hasChildren
-          log.addError("Element has subnodes. Unfortunately granula does not support such case yet, please add gr-key to each of subnodes separately or wrap your text nodes in some elements : #{htmlDocument.getPath(element)}, subnodes: #{_.pluck(element.children, 'name').join(',')}")
-          return
-        if textNodes.length > 1
-          log.addWarning("Element has more than 1 text node, only first will be processed: #{htmlDocument.getPath(element)}")
-        text = textNodes[0]
-        if hasSomethingToTranslate(text) and htmlDocument.hasAttribute(element, 'gr-key')
-          key = @getKey text, htmlDocument.getAttribute(element, "gr-key"), -> htmlDocument.getPath(element)
-          @processKey(key, text)
+        if htmlDocument.hasAttribute(element, 'gr-key')
+          textNodes = htmlDocument.getText(element)#TODO: process other text nodes as well, or add warning
+          hasChildren = htmlDocument.getChildNodes(element).length > 0
+          if hasChildren
+            log.addError("Element has subnodes. Unfortunately granula does not support such case yet, please add gr-key to each of subnodes separately or wrap your text nodes in some elements : #{htmlDocument.getPath(element)}, subnodes: #{_.pluck(element.children, 'name').join(',')}")
+            return
+          if textNodes.length > 1
+            log.addWarning("Element has more than 1 text node, only first will be processed: #{htmlDocument.getPath(element)}")
+          text = textNodes[0]
+          if hasSomethingToTranslate(text)
+            key = @getKey text, htmlDocument.getAttribute(element, "gr-key"), -> htmlDocument.getPath(element)
+            @processKey(key, text)
         #2 - attrs
         attrs = @getAttrs(element)
         attrs.forEach (attrName) =>
