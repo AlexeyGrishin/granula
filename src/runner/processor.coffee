@@ -62,7 +62,6 @@ module.exports = ->
         if htmlDocument.hasAttribute(element, 'gr-key')
           text = htmlDocument.getText(element)
           html = htmlDocument.getInnerHtml(element)
-          console.log text
           if hasSomethingToTranslate(text)
             # it is not typo - we use text for key generation and html as value
             key = @getKey text, htmlDocument.getAttribute(element, "gr-key"), -> htmlDocument.getPath(element)
