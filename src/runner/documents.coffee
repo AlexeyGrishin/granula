@@ -21,8 +21,16 @@ module.exports.htmlDocument = (html) ->
   forEach: (action) ->
     dom.forEach (el) => @processWithChildren(el, action)
 
+  root: -> dom
+
   getText: (element) ->
-    element.children?.filter((ch) -> ch.type=='text').filter((ch)->ch.data.trim().length > 0).map((ch) -> ch.data) ? []
+    nodeToText = (parts, element) ->
+      parts.push(element.data) if element.type == 'text'
+      for child in element.children ? []
+        nodeToText parts, child
+      parts
+
+    nodeToText([], element).join("")
 
   getChildNodes: (element) ->
     element.children?.filter((ch) -> ch.type != 'text') ? []
@@ -44,4 +52,29 @@ module.exports.htmlDocument = (html) ->
     parts.map((e) -> "<#{e.name} #{args(e)}>").join(" / ")
 
 
+  getInnerHtml: (element) ->
+    parts = []
+    for child in element.children
+      nodeToHtml parts, child
+    parts.join("")
 
+  getHtml: (element) ->
+    nodeToHtml([], element).join("")
+
+
+nodeStart = (parts, element) ->
+  parts.push "<#{element.name}"
+  for attr, val of element.attribs
+    parts.push " #{attr}"
+    parts.push "=\"#{val}\"" if attr != val and not _.isEmpty(val)
+  parts.push ">"
+nodeEnd = (parts, element) ->
+  parts.push "</#{element.name}>"
+nodeToHtml = (parts, element) ->
+  parts.push element.data if element.type == 'text'
+  return if element.type != 'tag'
+  nodeStart parts, element
+  for child in element.children ? []
+    nodeToHtml parts, child
+  nodeEnd parts, element
+  parts

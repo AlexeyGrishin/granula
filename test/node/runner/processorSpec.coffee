@@ -62,10 +62,33 @@ describe "html processor", ->
       }
       expectNoErrorsWarnings()
 
-    it "shall add warnings for elements with childnodes", ->
+    it "shall process elements with childnodes", ->
       htmlDoc = htmlDocument """<div gr-key='key1'>This is <b>value</b></div>"""
       res = {}
       processor.processHtml res, htmlDoc, defOptions, log
-      expect(res).toEqual {}
-      expect(log.errors.length).toEqual(1)
+      expect(res).toEqual {
+        "key1": "This is <b>value</b>"
+      }
+      expectNoErrorsWarnings()
+
+    it "shall get text only key value for node with childnodes", ->
+      htmlDoc = htmlDocument """<div gr-key>This is <b>value</b></div>"""
+      res = {}
+      processor.processHtml res, htmlDoc, defOptions, log
+      expect(res).toEqual {
+        "This is value": "This is <b>value</b>"
+      }
+      expectNoErrorsWarnings()
+
+    it "shall keep all attributes of childnodes", ->
+      html = """This is <a href="/" target="_blank" ng-click="record()" ng-cloak>value</a>"""
+      htmlDoc = htmlDocument """<div gr-key='key1'>#{html}</div>"""
+      res = {}
+      processor.processHtml res, htmlDoc, defOptions, log
+      expect(res).toEqual {
+        "key1": html
+      }
+      expectNoErrorsWarnings()
+
+
 
