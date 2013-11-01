@@ -60,17 +60,12 @@ module.exports = ->
         return if not @shallProcessElement(element)
         #1 - text
         if htmlDocument.hasAttribute(element, 'gr-key')
-          textNodes = htmlDocument.getText(element)#TODO: process other text nodes as well, or add warning
-          hasChildren = htmlDocument.getChildNodes(element).length > 0
-          if hasChildren
-            log.addError("Element has subnodes. Unfortunately granula does not support such case yet, please add gr-key to each of subnodes separately or wrap your text nodes in some elements : #{htmlDocument.getPath(element)}, subnodes: #{_.pluck(element.children, 'name').join(',')}")
-            return
-          if textNodes.length > 1
-            log.addWarning("Element has more than 1 text node, only first will be processed: #{htmlDocument.getPath(element)}")
-          text = textNodes[0]
+          text = htmlDocument.getText(element)
+          html = htmlDocument.getInnerHtml(element)
           if hasSomethingToTranslate(text)
+            # it is not typo - we use text for key generation and html as value
             key = @getKey text, htmlDocument.getAttribute(element, "gr-key"), -> htmlDocument.getPath(element)
-            @processKey(key, text)
+            @processKey(key, html)
         #2 - attrs
         attrs = @getAttrs(element)
         attrs.forEach (attrName) =>

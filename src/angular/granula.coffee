@@ -284,8 +284,8 @@ angular.module('granula').directive 'grAttrs', (grService, $interpolate) ->
 
 
 angular.module('granula').directive 'grKey', (grService, $interpolate) ->
-  read = (el) -> el.text()
-  write =(el, val) -> el.text(val)
+  read = (el) -> el.html()
+  write =(el, val) -> el.html(val)
   compile: (el, attrs) ->
     keyExpr = grService.toKey(attrs.grKey, el.text())
     interpolateKey = $interpolate(keyExpr, true) if attrs.grKey
