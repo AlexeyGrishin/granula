@@ -262,6 +262,12 @@ describe "granula.compile", ->
     expect("{{x}}{{y}}error(s):x").toBeCompiledInto(compiled()
       .arg("x").arg("y").pe("error(s)", "x")
     )
+
+  it "shall link to specified explicitly variable with dots", ->
+    expect("{{x}}{{y}}error(s):x.y").toBeCompiledInto(compiled()
+      .arg("x").arg("y").pe("error(s)", "x.y")
+    )
+
   it "shall link to specified explicitly variable even it is not included into pattern", ->
     expect("error(s):e here").toBeCompiledInto(compiled()
       .pe("error(s)", "e").str(" here")

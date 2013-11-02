@@ -31,6 +31,7 @@ pluralizerParser = (preparePluralizationFn) ->
   escape = "\\"
   separator = ","
   wordSeparator = /[\s,.!:;'\"-+=*%$#@{}()]/
+  varEnd = /[\s,!:;'\"-+=*%$#@{}()]/    #same as wordSeparator but without '.' which is widely used in angular expressions
   exactVarSpec = ":"
   nearestRight = ">"
 
@@ -77,7 +78,7 @@ pluralizerParser = (preparePluralizationFn) ->
       if (str[end + endSymbol.length]) == exactVarSpec
         startVar = end + endSymbol.length + 1
         end = startVar
-        end++ while end < str.length and not str[end].match wordSeparator
+        end++ while end < str.length and not str[end].match varEnd
         exactVar = str.substring(startVar, end)
         if exactVar == nearestRight
           argLink = {next: true}
