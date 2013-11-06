@@ -228,15 +228,6 @@ describe "granula.compile", ->
   it "shall accept key as well", ->
     expect(granula.compile("en", key:"key1")(1)).toEqual("1 cat")
 
-  #TODO: test using toBeCompiledInto
-  #   {{x}}
-  #   {{x}}word(s)
-  #   word(s){{x}}
-  #   word(s)
-  #   word(s):x
-  #   word(s):> {{x}}
-  #   {{x}} {{y}} word(s)
-
   it "shall link to nearest variable on the left if not specified explicitly", ->
     expect("{{1}}{{2}}word(s){{3}}").toBeCompiledInto(compiled().arg("1").arg("2").pe("word(s)", "2").arg("3"))
 

@@ -6,8 +6,6 @@ ATTRS_TO_TRANSLATE = ["title", "alt", "placeholder"]
 TAGS_TO_IGNORE = ["script", "link", "style"]
 ATTR_TO_IGNORE = "gr-skip"
 
-#TODO: do not process empty elements
-#TODO: exclude {{}} from keys?
 module.exports = ->
   granula = granulaCtor()
 

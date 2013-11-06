@@ -3,7 +3,6 @@ keys = require('../granula/keys')
 
 angular.module('granula', [])
 
-#TODO: copy-paste from runner.coffee, move to separate fie
 defaultOptions = require('../runner/defaultOptions')
 
 angular.module('granula').provider 'grService', ->
