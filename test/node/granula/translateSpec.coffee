@@ -253,6 +253,14 @@ describe "granula.compile", ->
       .pe("item(s)", "n")
     )
 
+  it "shall link to the nearest variable on the right if specified explicitly with escaped char", ->
+    expect("There (is,are):&gt; {{n}}").toBeCompiledInto(compiled()
+      .str("There ")
+      .pe("(is,are)", "n")
+      .str(" ")
+      .arg("n")
+    )
+
   it "shall ignore empty variable name", ->
     expect("{{x}}error(s):").toBeCompiledInto(compiled()
       .arg("x").pe("error(s)", "x")

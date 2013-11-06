@@ -31,9 +31,11 @@ pluralizerParser = (preparePluralizationFn) ->
   escape = "\\"
   separator = ","
   wordSeparator = /[\s,.!:;'\"-+=*%$#@{}()]/
-  varEnd = /[\s,!:;'\"-+=*%$#@{}()]/    #same as wordSeparator but without '.' which is widely used in angular expressions
+  varEnd = /[\s,!:'\"+=*%$#@{}()-]/     #same as wordSeparator but without
+                                        # '.' which is widely used in angular expressions
+                                        # ';' which is used in HTML escaped chars, like &gt;
   exactVarSpec = ":"
-  nearestRight = ">"
+  nearestRight = [">","&gt;"]
 
   plural = (word, suffixes, argName) ->
     fn = preparePluralizationFn(word, suffixes)
@@ -80,7 +82,7 @@ pluralizerParser = (preparePluralizationFn) ->
         end = startVar
         end++ while end < str.length and not str[end].match varEnd
         exactVar = str.substring(startVar, end)
-        if exactVar == nearestRight
+        if nearestRight.indexOf(exactVar) > -1
           argLink = {next: true}
           cPos = end
         else if exactVar.length > 0
