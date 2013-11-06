@@ -128,7 +128,6 @@ module.exports = ->
   preparePluralizationFn: (language, word, suffixes, options) ->
     res = @normalizeForms language, word, suffixes, options
     (val) =>
-      console.log @getPluralizeForm(language, val, options)
       res.word + res.suffixes[@getPluralizeForm(language, val, options)]
 
   getLanguages: -> Object.keys(pluralizationRules)

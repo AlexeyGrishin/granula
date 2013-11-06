@@ -1159,7 +1159,6 @@
           _this = this;
         res = this.normalizeForms(language, word, suffixes, options);
         return function(val) {
-          console.log(_this.getPluralizeForm(language, val, options));
           return res.word + res.suffixes[_this.getPluralizeForm(language, val, options)];
         };
       },
