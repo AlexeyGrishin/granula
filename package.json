@@ -1,8 +1,9 @@
 {
   "name": "granula",
   "version": "1.0.5",
+  "description": "i18n tool for angular.js applications",
   "author": "Alexey.Grishin@gmail.com",
-  "keywords": ["angular", "angular.js", "i18n", "translate", "pluralization"],
+  "keywords": ["angular", "angular.js", "i18n", "internationalization", "localization", "translate", "pluralization"],
   "dependencies": {
     "wrench": "~1.5.1",
     "htmlparser2": "~3.3.0",
