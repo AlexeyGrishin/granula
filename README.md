@@ -6,6 +6,9 @@ __granula__ is a tool which helps with i18n of angular.js applications.
 
 See an example on jsfiddle: http://jsfiddle.net/GRaAL/EasQP/1/
 
+Dependencies:
+- angular.js (>=1.0.8)
+
 How to use
 -----------
 
