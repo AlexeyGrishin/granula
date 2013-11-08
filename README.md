@@ -87,3 +87,5 @@ Roadmap
 ----------------
 1. Collect keys from js files as well
 2. More documentation and examples
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/AlexeyGrishin/granula/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
