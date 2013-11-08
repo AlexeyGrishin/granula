@@ -233,7 +233,7 @@ describe 'gr-lang attribute for script', ->
       $compile(dom)
       expect(grService.canTranslate("key1", "it")).toBeTruthy()
 
-  it 'shall asynchronously load language definitions from source when sцitching', ->
+  it 'shall asynchronously load language definitions from source when switching', ->
     dom = """
             <script gr-lang='it' src='it.json' type='granula/lang'></script>
           """
@@ -259,6 +259,25 @@ describe 'gr-lang attribute for script', ->
 
       $httpBackend.verifyNoOutstandingExpectation()
 
+  it "shall load several files and do not throw errors until data is loaded", ->
+    dom = """
+          <div gr-lang='en'>
+            <script gr-lang='en' src='en1.json' type='granula/lang'></script>
+            <script gr-lang='en' src='en2.json' type='granula/lang'></script>
+            <span id='s1' gr-key="t1"></span>
+            <p id='s2' gr-key="t2"></p>
+          </div>
+          """
+    inject ($compile, grService, $rootScope, $httpBackend) ->
+      $httpBackend.expectGET('en1.json').respond({"t1": "value1"})
+      $httpBackend.expectGET('en2.json').respond({"t2": "value2"})
+      scope = $rootScope.$new()
+      html = $compile(dom)(scope)
+      $httpBackend.flush()
+      scope.$digest()
+      expect(html.find('span').text()).toEqual("value1")
+      expect(html.find('p').text()).toEqual("value2")
+
   it 'shall not produce errors when language switched to another one during load', ->
     dom = """
           <script gr-lang='it' src='it.json' type='granula/lang'></script>
@@ -272,7 +291,7 @@ describe 'gr-lang attribute for script', ->
       $rootScope.$on 'gr-lang-changed', onChange
 
       $httpBackend.expectGET('it.json').respond({"key1": "value"})
-      $compile(dom)
+      $compile(dom)({})
       expect(onStartChange).toHaveBeenCalled()
       expect(onChange).not.toHaveBeenCalled()
       grService.setLanguage('it')

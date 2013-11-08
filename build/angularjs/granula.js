@@ -112,7 +112,7 @@
           setLanguage: function(lang) {
             var loadAsync, loadSync, _ref,
               _this = this;
-            if (lang === this.language) {
+            if (lang === this.language && !asyncLoaders[lang]) {
               return;
             }
             if ((_ref = asyncLoaders[lang]) != null ? _ref.loading : void 0) {
@@ -120,16 +120,21 @@
             }
             loadAsync = function(onLoad) {
               $rootScope.$broadcast('gr-lang-load', lang);
-              asyncLoaders[lang].loading = true;
-              return asyncLoaders[lang](function(error, data) {
-                if (error) {
-                  console.error(error);
-                  return $rootScope.$broadcast('gr-lang-load-error', error);
-                } else {
-                  _this.register(lang, data);
-                  delete asyncLoaders[lang];
-                  return onLoad();
-                }
+              asyncLoaders[lang].loading = asyncLoaders[lang].length;
+              return asyncLoaders[lang].forEach(function(loader) {
+                return loader(function(error, data) {
+                  if (error) {
+                    console.error(error);
+                    return $rootScope.$broadcast('gr-lang-load-error', error);
+                  } else {
+                    _this.register(lang, data);
+                    asyncLoaders[lang].loading--;
+                    if (asyncLoaders[lang].loading === 0) {
+                      delete asyncLoaders[lang];
+                      return onLoad();
+                    }
+                  }
+                });
               });
             };
             loadSync = function() {
@@ -149,7 +154,10 @@
               throw new Error("language shall be defined!");
             }
             if (angular.isFunction(data_or_loader)) {
-              return asyncLoaders[language] = data_or_loader;
+              if (asyncLoaders[language] == null) {
+                asyncLoaders[language] = [];
+              }
+              return asyncLoaders[language].push(data_or_loader);
             } else {
               return granula.load(wrap(language, data_or_loader));
             }
@@ -181,6 +189,10 @@
             if (options == null) {
               options = {};
             }
+            if (angular.isObject(pattern)) {
+              options = pattern;
+              pattern = null;
+            }
             if (angular.isObject(options)) {
               angular.extend(options, {
                 language: this.language
@@ -191,11 +203,14 @@
                 language: this.language
               };
             }
+            if (asyncLoaders[options.language]) {
+              return "";
+            }
             realKey = this.toKey(options.key, pattern);
-            if (this.isOriginal()) {
+            if (this.isOriginal() && pattern) {
               this.save(realKey, pattern, options.language);
             }
-            return granula.translate(realKey, options.language, args);
+            return granula.translate(options.language, realKey, args);
           },
           compile: function(key, language, skipIfEmpty) {
             var e;
@@ -204,6 +219,9 @@
             }
             if (skipIfEmpty == null) {
               skipIfEmpty = true;
+            }
+            if (asyncLoaders[language]) {
+              return "";
             }
             this._registerOriginal();
             if (argumentNamesByKey[key] === void 0 && language !== this.originalLanguage) {
@@ -291,12 +309,12 @@
         grService.setOriginalLanguage(attrs.grLangOfText);
       }
       requireInterpolation = $interpolate(attrs.grLang, true);
-      if (requireInterpolation || !grService.canTranslateTo(attrs.grLang)) {
-        grService.setLanguage(grService.originalLanguage);
-      } else {
-        grService.setLanguage(attrs.grLang);
-      }
       return function(scope, el, attrs) {
+        if (requireInterpolation || !grService.canTranslateTo(attrs.grLang)) {
+          grService.setLanguage(grService.originalLanguage);
+        } else {
+          grService.setLanguage(attrs.grLang);
+        }
         return attrs.$observe("grLang", function(newVal) {
           if (newVal.length) {
             return grService.setLanguage(newVal);

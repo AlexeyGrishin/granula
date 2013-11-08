@@ -88,19 +88,22 @@ angular.module('granula').provider 'grService', ->
     # - gr-lang-load-error - if language data cannot be loaded
     # - gr-lang-changed - when language actually switched and data is loaded
     setLanguage: (lang) ->
-      return if lang is @language
+      return if lang is @language and not asyncLoaders[lang]
       return if asyncLoaders[lang]?.loading
       loadAsync = (onLoad) =>
         $rootScope.$broadcast 'gr-lang-load', lang
-        asyncLoaders[lang].loading = true
-        asyncLoaders[lang] (error, data) =>
-          if error
-            console.error(error)
-            $rootScope.$broadcast 'gr-lang-load-error', error
-          else
-            @register(lang, data)
-            delete asyncLoaders[lang]
-            onLoad()
+        asyncLoaders[lang].loading = asyncLoaders[lang].length
+        asyncLoaders[lang].forEach (loader) =>
+          loader (error, data) =>
+            if error
+              console.error(error)
+              $rootScope.$broadcast 'gr-lang-load-error', error
+            else
+              @register(lang, data)
+              asyncLoaders[lang].loading--
+              if asyncLoaders[lang].loading == 0
+                delete asyncLoaders[lang]
+                onLoad()
       loadSync = =>
         @language = lang
         $rootScope.$broadcast 'gr-lang-changed', lang
@@ -113,7 +116,8 @@ angular.module('granula').provider 'grService', ->
     register: (language, data_or_loader) ->
       throw new Error("language shall be defined!") if not language
       if angular.isFunction(data_or_loader)
-        asyncLoaders[language] = data_or_loader
+        asyncLoaders[language] ?= []
+        asyncLoaders[language].push(data_or_loader)
       else
         granula.load wrap(language, data_or_loader)
 
@@ -139,19 +143,25 @@ angular.module('granula').provider 'grService', ->
     # - if textAsKey == 'never' then key is required and will be used
     # - if textAsKey == 'nokey' then key is not required and, if absent, text will be used instead
     # - if textAsKey == 'always' then key will be ignored
+    # Returns empty string while there is ongoing loading
     #TODO: untested!
     translate: (pattern, options = {}, args...) ->
+      if angular.isObject(pattern)
+        options = pattern
+        pattern = null
       if angular.isObject(options)
         angular.extend options, {@language}
       else
         args.unshift(options)
         options = {@language}
+      return "" if asyncLoaders[options.language]
       realKey = @toKey options.key, pattern
-      if @isOriginal()
+      if @isOriginal() and pattern
         @save realKey, pattern, options.language
-      granula.translate realKey, options.language, args
+      granula.translate options.language, realKey, args
 
     compile: (key, language = @language, skipIfEmpty = true) ->
+      return "" if asyncLoaders[language]
       @_registerOriginal()
       # It is done in order to store argument names from original text
       # before switching to another language (because another language has numeric attributes (like {{1}}) in text
@@ -206,11 +216,11 @@ angular.module('granula').directive 'grLang', ($rootScope, grService, $interpola
   compileOther = (el, attrs) ->
     grService.setOriginalLanguage attrs.grLangOfText if attrs.grLangOfText
     requireInterpolation = $interpolate(attrs.grLang, true)
-    if requireInterpolation or not grService.canTranslateTo(attrs.grLang)
-      grService.setLanguage grService.originalLanguage
-    else
-      grService.setLanguage attrs.grLang
     (scope, el, attrs) ->
+      if requireInterpolation or not grService.canTranslateTo(attrs.grLang)
+        grService.setLanguage grService.originalLanguage
+      else
+        grService.setLanguage attrs.grLang
       attrs.$observe "grLang", (newVal) ->
         grService.setLanguage newVal if newVal.length
 
