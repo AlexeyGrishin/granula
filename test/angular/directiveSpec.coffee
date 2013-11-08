@@ -261,11 +261,13 @@ describe 'gr-lang attribute for script', ->
 
   it "shall load several files and do not throw errors until data is loaded", ->
     dom = """
-          <div gr-lang='en'>
+          <div>
             <script gr-lang='en' src='en1.json' type='granula/lang'></script>
             <script gr-lang='en' src='en2.json' type='granula/lang'></script>
-            <span id='s1' gr-key="t1"></span>
-            <p id='s2' gr-key="t2"></p>
+            <div gr-lang='en'>
+              <span id='s1' gr-key="t1"></span>
+              <p id='s2' gr-key="t2"></p>
+            </div>
           </div>
           """
     inject ($compile, grService, $rootScope, $httpBackend) ->

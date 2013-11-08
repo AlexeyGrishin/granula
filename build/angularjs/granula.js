@@ -118,6 +118,7 @@
             if ((_ref = asyncLoaders[lang]) != null ? _ref.loading : void 0) {
               return;
             }
+            this._loading = lang;
             loadAsync = function(onLoad) {
               $rootScope.$broadcast('gr-lang-load', lang);
               asyncLoaders[lang].loading = asyncLoaders[lang].length;
@@ -138,6 +139,9 @@
               });
             };
             loadSync = function() {
+              if (lang !== _this._loading) {
+                return;
+              }
               _this.language = lang;
               return $rootScope.$broadcast('gr-lang-changed', lang);
             };
@@ -220,9 +224,6 @@
             if (skipIfEmpty == null) {
               skipIfEmpty = true;
             }
-            if (asyncLoaders[language]) {
-              return "";
-            }
             this._registerOriginal();
             if (argumentNamesByKey[key] === void 0 && language !== this.originalLanguage) {
               this.compile(key, this.originalLanguage, false);
@@ -233,10 +234,12 @@
               }).apply(angularInterpolator(mapArgumentByKey(key)));
             } catch (_error) {
               e = _error;
-              if (!skipIfEmpty) {
-                throw e;
+              if (!asyncLoaders[language]) {
+                if (!skipIfEmpty) {
+                  throw e;
+                }
+                console.error(e.message, e);
               }
-              console.error(e.message, e);
               return "";
             }
           },
@@ -309,12 +312,12 @@
         grService.setOriginalLanguage(attrs.grLangOfText);
       }
       requireInterpolation = $interpolate(attrs.grLang, true);
+      if (requireInterpolation || !grService.canTranslateTo(attrs.grLang)) {
+        grService.setLanguage(grService.originalLanguage);
+      } else {
+        grService.setLanguage(attrs.grLang);
+      }
       return function(scope, el, attrs) {
-        if (requireInterpolation || !grService.canTranslateTo(attrs.grLang)) {
-          grService.setLanguage(grService.originalLanguage);
-        } else {
-          grService.setLanguage(attrs.grLang);
-        }
         return attrs.$observe("grLang", function(newVal) {
           if (newVal.length) {
             return grService.setLanguage(newVal);

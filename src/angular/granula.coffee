@@ -90,6 +90,7 @@ angular.module('granula').provider 'grService', ->
     setLanguage: (lang) ->
       return if lang is @language and not asyncLoaders[lang]
       return if asyncLoaders[lang]?.loading
+      @_loading = lang
       loadAsync = (onLoad) =>
         $rootScope.$broadcast 'gr-lang-load', lang
         asyncLoaders[lang].loading = asyncLoaders[lang].length
@@ -105,6 +106,7 @@ angular.module('granula').provider 'grService', ->
                 delete asyncLoaders[lang]
                 onLoad()
       loadSync = =>
+        return if lang != @_loading
         @language = lang
         $rootScope.$broadcast 'gr-lang-changed', lang
       if asyncLoaders[lang] then loadAsync -> loadSync() else loadSync()
@@ -161,7 +163,6 @@ angular.module('granula').provider 'grService', ->
       granula.translate options.language, realKey, args
 
     compile: (key, language = @language, skipIfEmpty = true) ->
-      return "" if asyncLoaders[language]
       @_registerOriginal()
       # It is done in order to store argument names from original text
       # before switching to another language (because another language has numeric attributes (like {{1}}) in text
@@ -171,8 +172,9 @@ angular.module('granula').provider 'grService', ->
       try
         granula.compile(language, {key}).apply angularInterpolator(mapArgumentByKey(key))
       catch e
-        throw e if not skipIfEmpty
-        console.error(e.message, e)
+        if not asyncLoaders[language]
+          throw e if not skipIfEmpty
+          console.error(e.message, e)
         return ""   #continue working
 
     # Evaluates plural expression with the specified number
@@ -216,11 +218,11 @@ angular.module('granula').directive 'grLang', ($rootScope, grService, $interpola
   compileOther = (el, attrs) ->
     grService.setOriginalLanguage attrs.grLangOfText if attrs.grLangOfText
     requireInterpolation = $interpolate(attrs.grLang, true)
+    if requireInterpolation or not grService.canTranslateTo(attrs.grLang)
+      grService.setLanguage grService.originalLanguage
+    else
+      grService.setLanguage attrs.grLang
     (scope, el, attrs) ->
-      if requireInterpolation or not grService.canTranslateTo(attrs.grLang)
-        grService.setLanguage grService.originalLanguage
-      else
-        grService.setLanguage attrs.grLang
       attrs.$observe "grLang", (newVal) ->
         grService.setLanguage newVal if newVal.length
 
