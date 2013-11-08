@@ -280,8 +280,10 @@ describe 'gr-lang attribute for script', ->
 
   it 'shall not produce errors when language switched to another one during load', ->
     dom = """
-          <script gr-lang='it' src='it.json' type='granula/lang'></script>
-          <div gr-lang='it'></div>
+          <div>
+            <script gr-lang='it' src='it.json' type='granula/lang'></script>
+            <div gr-lang-of-text='it' gr-lang='it' gr-key='key1'></div>
+          </div>
           """
     inject ($compile, grService, $rootScope, $httpBackend) ->
       onStartChange = jasmine.createSpy()
@@ -291,7 +293,7 @@ describe 'gr-lang attribute for script', ->
       $rootScope.$on 'gr-lang-changed', onChange
 
       $httpBackend.expectGET('it.json').respond({"key1": "value"})
-      $compile(dom)({})
+      html = $compile(dom)($rootScope.$new())
       expect(onStartChange).toHaveBeenCalled()
       expect(onChange).not.toHaveBeenCalled()
       grService.setLanguage('it')
@@ -300,5 +302,5 @@ describe 'gr-lang attribute for script', ->
       expect(onChange).toHaveBeenCalled()
       $httpBackend.verifyNoOutstandingExpectation()
       $httpBackend.verifyNoOutstandingRequest()
-
+      expect(html.find('div').text()).toEqual('value')
 
