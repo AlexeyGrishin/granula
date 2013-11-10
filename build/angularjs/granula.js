@@ -84,183 +84,187 @@
       config: function(opts) {
         return angular.extend(options, defaultOptions, opts);
       },
-      $get: function($rootScope) {
-        var wrap;
-        wrap = function(language, dataToWrap) {
-          var data;
-          data = {};
-          data[language] = dataToWrap != null ? dataToWrap : {};
-          return data;
-        };
-        return {
-          language: "en",
-          originalLanguage: "en",
-          toKey: function(attribute, text) {
-            return keys.toKey(attribute, text, options);
-          },
-          isOriginal: function() {
-            return this.language === this.originalLanguage;
-          },
-          _registerOriginal: function() {
-            this.register(this.originalLanguage);
-            return this._registerOriginal = function() {};
-          },
-          setOriginalLanguage: function(lang) {
-            this.originalLanguage = lang;
-            return this._registerOriginal();
-          },
-          setLanguage: function(lang) {
-            var loadAsync, loadSync, _ref,
-              _this = this;
-            if (lang === this.language && !asyncLoaders[lang]) {
-              return;
-            }
-            if ((_ref = asyncLoaders[lang]) != null ? _ref.loading : void 0) {
-              return;
-            }
-            this._loading = lang;
-            loadAsync = function(onLoad) {
-              $rootScope.$broadcast('gr-lang-load', lang);
-              asyncLoaders[lang].loading = asyncLoaders[lang].length;
-              return asyncLoaders[lang].forEach(function(loader) {
-                return loader(function(error, data) {
-                  if (error) {
-                    console.error(error);
-                    return $rootScope.$broadcast('gr-lang-load-error', error);
-                  } else {
-                    _this.register(lang, data);
-                    asyncLoaders[lang].loading--;
-                    if (asyncLoaders[lang].loading === 0) {
-                      delete asyncLoaders[lang];
-                      return onLoad();
-                    }
-                  }
-                });
-              });
-            };
-            loadSync = function() {
-              if (lang !== _this._loading) {
+      $get: [
+        '$rootScope', function($rootScope) {
+          var wrap;
+          wrap = function(language, dataToWrap) {
+            var data;
+            data = {};
+            data[language] = dataToWrap != null ? dataToWrap : {};
+            return data;
+          };
+          return {
+            language: "en",
+            originalLanguage: "en",
+            toKey: function(attribute, text) {
+              return keys.toKey(attribute, text, options);
+            },
+            isOriginal: function() {
+              return this.language === this.originalLanguage;
+            },
+            _registerOriginal: function() {
+              this.register(this.originalLanguage);
+              return this._registerOriginal = function() {};
+            },
+            setOriginalLanguage: function(lang) {
+              this.originalLanguage = lang;
+              return this._registerOriginal();
+            },
+            setLanguage: function(lang) {
+              var loadAsync, loadSync, _ref,
+                _this = this;
+              if (lang === this.language && !asyncLoaders[lang]) {
                 return;
               }
-              _this.language = lang;
-              return $rootScope.$broadcast('gr-lang-changed', lang);
-            };
-            if (asyncLoaders[lang]) {
-              return loadAsync(function() {
-                return loadSync();
-              });
-            } else {
-              return loadSync();
-            }
-          },
-          register: function(language, data_or_loader) {
-            if (!language) {
-              throw new Error("language shall be defined!");
-            }
-            if (angular.isFunction(data_or_loader)) {
-              if (asyncLoaders[language] == null) {
-                asyncLoaders[language] = [];
+              if ((_ref = asyncLoaders[lang]) != null ? _ref.loading : void 0) {
+                return;
               }
-              return asyncLoaders[language].push(data_or_loader);
-            } else {
-              return granula.load(wrap(language, data_or_loader));
-            }
-          },
-          save: function(key, pattern, language) {
-            var data;
-            if (language == null) {
-              language = this.originalLanguage;
-            }
-            data = wrap(language);
-            data[language][key] = pattern;
-            return granula.load(data);
-          },
-          canTranslate: function(key, language) {
-            if (language == null) {
-              language = this.language;
-            }
-            return granula.canTranslate(language, key);
-          },
-          canTranslateTo: function(language) {
-            if (language == null) {
-              language = this.language;
-            }
-            return granula.canTranslateTo(language) || asyncLoaders[language];
-          },
-          translate: function() {
-            var args, options, pattern, realKey;
-            pattern = arguments[0], options = arguments[1], args = 3 <= arguments.length ? __slice.call(arguments, 2) : [];
-            if (options == null) {
-              options = {};
-            }
-            if (angular.isObject(pattern)) {
-              options = pattern;
-              pattern = null;
-            }
-            if (angular.isObject(options)) {
-              angular.extend(options, {
-                language: this.language
-              });
-            } else {
-              args.unshift(options);
-              options = {
-                language: this.language
+              this._loading = lang;
+              loadAsync = function(onLoad) {
+                $rootScope.$broadcast('gr-lang-load', lang);
+                asyncLoaders[lang].loading = asyncLoaders[lang].length;
+                return asyncLoaders[lang].forEach(function(loader) {
+                  return loader(function(error, data) {
+                    if (error) {
+                      console.error(error);
+                      return $rootScope.$broadcast('gr-lang-load-error', error);
+                    } else {
+                      _this.register(lang, data);
+                      asyncLoaders[lang].loading--;
+                      if (asyncLoaders[lang].loading === 0) {
+                        delete asyncLoaders[lang];
+                        return onLoad();
+                      }
+                    }
+                  });
+                });
               };
-            }
-            if (asyncLoaders[options.language]) {
-              return "";
-            }
-            realKey = this.toKey(options.key, pattern);
-            if (this.isOriginal() && pattern) {
-              this.save(realKey, pattern, options.language);
-            }
-            return granula.translate(options.language, realKey, args);
-          },
-          compile: function(key, language, skipIfEmpty) {
-            var e;
-            if (language == null) {
-              language = this.language;
-            }
-            if (skipIfEmpty == null) {
-              skipIfEmpty = true;
-            }
-            this._registerOriginal();
-            if (argumentNamesByKey[key] === void 0 && language !== this.originalLanguage) {
-              this.compile(key, this.originalLanguage, false);
-            }
-            try {
-              return granula.compile(language, {
-                key: key
-              }).apply(angularInterpolator(mapArgumentByKey(key)));
-            } catch (_error) {
-              e = _error;
-              if (!asyncLoaders[language]) {
-                if (!skipIfEmpty) {
-                  throw e;
+              loadSync = function() {
+                if (lang !== _this._loading) {
+                  return;
                 }
-                console.error(e.message, e);
+                _this.language = lang;
+                return $rootScope.$broadcast('gr-lang-changed', lang);
+              };
+              if (asyncLoaders[lang]) {
+                return loadAsync(function() {
+                  return loadSync();
+                });
+              } else {
+                return loadSync();
               }
-              return "";
+            },
+            register: function(language, data_or_loader) {
+              if (!language) {
+                throw new Error("language shall be defined!");
+              }
+              if (angular.isFunction(data_or_loader)) {
+                if (asyncLoaders[language] == null) {
+                  asyncLoaders[language] = [];
+                }
+                return asyncLoaders[language].push(data_or_loader);
+              } else {
+                return granula.load(wrap(language, data_or_loader));
+              }
+            },
+            save: function(key, pattern, language) {
+              var data;
+              if (language == null) {
+                language = this.originalLanguage;
+              }
+              data = wrap(language);
+              data[language][key] = pattern;
+              return granula.load(data);
+            },
+            canTranslate: function(key, language) {
+              if (language == null) {
+                language = this.language;
+              }
+              return granula.canTranslate(language, key);
+            },
+            canTranslateTo: function(language) {
+              if (language == null) {
+                language = this.language;
+              }
+              return granula.canTranslateTo(language) || asyncLoaders[language];
+            },
+            translate: function() {
+              var args, options, pattern, realKey;
+              pattern = arguments[0], options = arguments[1], args = 3 <= arguments.length ? __slice.call(arguments, 2) : [];
+              if (options == null) {
+                options = {};
+              }
+              if (angular.isObject(pattern)) {
+                options = pattern;
+                pattern = null;
+              }
+              if (angular.isObject(options)) {
+                angular.extend(options, {
+                  language: this.language
+                });
+              } else {
+                args.unshift(options);
+                options = {
+                  language: this.language
+                };
+              }
+              if (asyncLoaders[options.language]) {
+                return "";
+              }
+              realKey = this.toKey(options.key, pattern);
+              if (this.isOriginal() && pattern) {
+                this.save(realKey, pattern, options.language);
+              }
+              return granula.translate(options.language, realKey, args);
+            },
+            compile: function(key, language, skipIfEmpty) {
+              var e;
+              if (language == null) {
+                language = this.language;
+              }
+              if (skipIfEmpty == null) {
+                skipIfEmpty = true;
+              }
+              this._registerOriginal();
+              if (argumentNamesByKey[key] === void 0 && language !== this.originalLanguage) {
+                this.compile(key, this.originalLanguage, false);
+              }
+              try {
+                return granula.compile(language, {
+                  key: key
+                }).apply(angularInterpolator(mapArgumentByKey(key)));
+              } catch (_error) {
+                e = _error;
+                if (!asyncLoaders[language]) {
+                  if (!skipIfEmpty) {
+                    throw e;
+                  }
+                  console.error(e.message, e);
+                }
+                return "";
+              }
+            },
+            plural: function(expression, value) {
+              var compiled, _ref,
+                _this = this;
+              compiled = (_ref = peCache[expression]) != null ? _ref : (function() {
+                return peCache[expression] = granula.compile(_this.language, "" + expression + ":1");
+              })();
+              return compiled.apply(pluralInterpolator(), value);
             }
-          },
-          plural: function(expression, value) {
-            var compiled, _ref,
-              _this = this;
-            compiled = (_ref = peCache[expression]) != null ? _ref : (function() {
-              return peCache[expression] = granula.compile(_this.language, "" + expression + ":1");
-            })();
-            return compiled.apply(pluralInterpolator(), value);
-          }
-        };
-      }
+          };
+        }
+      ]
     };
   });
 
-  angular.module('granula').filter('grPluralize', function(grService) {
-    return function(input, pluralExpression) {
-      return grService.plural(pluralExpression, input);
-    };
-  });
+  angular.module('granula').filter('grPluralize', [
+    'grService', function(grService) {
+      return function(input, pluralExpression) {
+        return grService.plural(pluralExpression, input);
+      };
+    }
+  ]);
 
   angular.module('granula').directive('grStatus', function() {
     return function(scope, el) {
@@ -276,65 +280,67 @@
     };
   });
 
-  angular.module('granula').directive('grLang', function($rootScope, grService, $interpolate, $http) {
-    var compileOther, compileScript;
-    compileScript = function(el, attrs) {
-      var e, langName;
-      langName = attrs.grLang;
-      if ((langName != null ? langName : "").length === 0) {
-        throw new Error("gr-lang for script element shall have value - name of language");
-      }
-      if (attrs.src) {
-        grService.register(langName, function(cb) {
-          var _this = this;
-          return $http({
-            method: "GET",
-            url: attrs.src
-          }).success(function(data) {
-            return cb(null, data);
-          }).error(function() {
-            return cb("Cannot load " + attrs.src + " for language " + langName);
+  angular.module('granula').directive('grLang', [
+    '$rootScope', 'grService', '$interpolate', '$http', function($rootScope, grService, $interpolate, $http) {
+      var compileOther, compileScript;
+      compileScript = function(el, attrs) {
+        var e, langName;
+        langName = attrs.grLang;
+        if ((langName != null ? langName : "").length === 0) {
+          throw new Error("gr-lang for script element shall have value - name of language");
+        }
+        if (attrs.src) {
+          grService.register(langName, function(cb) {
+            var _this = this;
+            return $http({
+              method: "GET",
+              url: attrs.src
+            }).success(function(data) {
+              return cb(null, data);
+            }).error(function() {
+              return cb("Cannot load " + attrs.src + " for language " + langName);
+            });
           });
-        });
-      } else {
-        try {
-          grService.register(langName, JSON.parse(el.text()));
-        } catch (_error) {
-          e = _error;
-          throw new Error("Cannot parse json for language '" + langName + "'", e);
-        }
-      }
-      return void 0;
-    };
-    compileOther = function(el, attrs) {
-      var requireInterpolation;
-      if (attrs.grLangOfText) {
-        grService.setOriginalLanguage(attrs.grLangOfText);
-      }
-      requireInterpolation = $interpolate(attrs.grLang, true);
-      if (requireInterpolation || !grService.canTranslateTo(attrs.grLang)) {
-        grService.setLanguage(grService.originalLanguage);
-      } else {
-        grService.setLanguage(attrs.grLang);
-      }
-      return function(scope, el, attrs) {
-        return attrs.$observe("grLang", function(newVal) {
-          if (newVal.length) {
-            return grService.setLanguage(newVal);
-          }
-        });
-      };
-    };
-    return {
-      compile: function(el, attrs) {
-        if (el[0].tagName === 'SCRIPT') {
-          return compileScript(el, attrs);
         } else {
-          return compileOther(el, attrs);
+          try {
+            grService.register(langName, JSON.parse(el.text()));
+          } catch (_error) {
+            e = _error;
+            throw new Error("Cannot parse json for language '" + langName + "'", e);
+          }
         }
-      }
-    };
-  });
+        return void 0;
+      };
+      compileOther = function(el, attrs) {
+        var requireInterpolation;
+        if (attrs.grLangOfText) {
+          grService.setOriginalLanguage(attrs.grLangOfText);
+        }
+        requireInterpolation = $interpolate(attrs.grLang, true);
+        if (requireInterpolation || !grService.canTranslateTo(attrs.grLang)) {
+          grService.setLanguage(grService.originalLanguage);
+        } else {
+          grService.setLanguage(attrs.grLang);
+        }
+        return function(scope, el, attrs) {
+          return attrs.$observe("grLang", function(newVal) {
+            if (newVal.length) {
+              return grService.setLanguage(newVal);
+            }
+          });
+        };
+      };
+      return {
+        compile: function(el, attrs) {
+          if (el[0].tagName === 'SCRIPT') {
+            return compileScript(el, attrs);
+          } else {
+            return compileOther(el, attrs);
+          }
+        }
+      };
+    }
+  ]);
 
   processDomText = function(grService, $interpolate, interpolateKey, startKey, readTextFn, writeTextFn, el) {
     var compiled, interpolateFn, pattern;
@@ -395,68 +401,72 @@
     };
   };
 
-  angular.module('granula').directive('grAttrs', function(grService, $interpolate) {
-    var read, write;
-    read = function(attrName) {
-      return function(el) {
-        return el.attr(attrName);
+  angular.module('granula').directive('grAttrs', [
+    'grService', '$interpolate', function(grService, $interpolate) {
+      var read, write;
+      read = function(attrName) {
+        return function(el) {
+          return el.attr(attrName);
+        };
       };
-    };
-    write = function(attrName) {
-      return function(el, val) {
-        return el.attr(attrName, val);
+      write = function(attrName) {
+        return function(el, val) {
+          return el.attr(attrName, val);
+        };
       };
-    };
-    return {
-      compile: function(el, attrs) {
-        var attrNames, linkFunctions;
-        attrNames = attrs.grAttrs.split(",");
-        linkFunctions = attrNames.map(function(attrName) {
-          var attrWithKeyValue, interpolateKey, keyExpr, startKey;
-          attrWithKeyValue = "grKey" + (attrName[0].toUpperCase() + attrName.substring(1));
-          keyExpr = grService.toKey(attrs[attrWithKeyValue], el.attr(attrName));
-          if (attrs[attrWithKeyValue]) {
+      return {
+        compile: function(el, attrs) {
+          var attrNames, linkFunctions;
+          attrNames = attrs.grAttrs.split(",");
+          linkFunctions = attrNames.map(function(attrName) {
+            var attrWithKeyValue, interpolateKey, keyExpr, startKey;
+            attrWithKeyValue = "grKey" + (attrName[0].toUpperCase() + attrName.substring(1));
+            keyExpr = grService.toKey(attrs[attrWithKeyValue], el.attr(attrName));
+            if (attrs[attrWithKeyValue]) {
+              interpolateKey = $interpolate(keyExpr, true);
+            }
+            startKey = interpolateKey ? null : keyExpr;
+            return {
+              link: processDomText(grService, $interpolate, interpolateKey, startKey, read(attrName), write(attrName), el).link,
+              attrName: attrName
+            };
+          });
+          return function(scope, el, attrs) {
+            var keyListeners;
+            return keyListeners = linkFunctions.map(function(l) {
+              return l.link(scope, el).onKeyChanged;
+            });
+          };
+        }
+      };
+    }
+  ]);
+
+  angular.module('granula').directive('grKey', [
+    'grService', '$interpolate', function(grService, $interpolate) {
+      var read, write;
+      read = function(el) {
+        return el.html();
+      };
+      write = function(el, val) {
+        return el.html(val);
+      };
+      return {
+        compile: function(el, attrs) {
+          var interpolateKey, keyExpr, link, startKey;
+          keyExpr = grService.toKey(attrs.grKey, el.text());
+          if (attrs.grKey) {
             interpolateKey = $interpolate(keyExpr, true);
           }
           startKey = interpolateKey ? null : keyExpr;
-          return {
-            link: processDomText(grService, $interpolate, interpolateKey, startKey, read(attrName), write(attrName), el).link,
-            attrName: attrName
+          link = processDomText(grService, $interpolate, interpolateKey, startKey, read, write, el).link;
+          return function(scope, el, attrs) {
+            return link(scope, el);
           };
-        });
-        return function(scope, el, attrs) {
-          var keyListeners;
-          return keyListeners = linkFunctions.map(function(l) {
-            return l.link(scope, el).onKeyChanged;
-          });
-        };
-      }
-    };
-  });
-
-  angular.module('granula').directive('grKey', function(grService, $interpolate) {
-    var read, write;
-    read = function(el) {
-      return el.html();
-    };
-    write = function(el, val) {
-      return el.html(val);
-    };
-    return {
-      compile: function(el, attrs) {
-        var interpolateKey, keyExpr, link, startKey;
-        keyExpr = grService.toKey(attrs.grKey, el.text());
-        if (attrs.grKey) {
-          interpolateKey = $interpolate(keyExpr, true);
         }
-        startKey = interpolateKey ? null : keyExpr;
-        link = processDomText(grService, $interpolate, interpolateKey, startKey, read, write, el).link;
-        return function(scope, el, attrs) {
-          return link(scope, el);
-        };
-      }
-    };
-  });
+      };
+    }
+  ]);
 
 }).call(this);
 

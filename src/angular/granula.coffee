@@ -50,7 +50,7 @@ angular.module('granula').provider 'grService', ->
   config: (opts) ->
     angular.extend options, defaultOptions, opts
 
-  $get: ($rootScope) ->
+  $get: ['$rootScope', ($rootScope) ->
     wrap = (language, dataToWrap) ->
       data = {}
       data[language] = dataToWrap ? {}
@@ -183,10 +183,12 @@ angular.module('granula').provider 'grService', ->
         peCache[expression] = granula.compile(@language, "#{expression}:1")
       )()
       compiled.apply pluralInterpolator(), value
+  ]
 
-angular.module('granula').filter 'grPluralize', (grService) ->
+angular.module('granula').filter 'grPluralize', ['grService', (grService) ->
   (input, pluralExpression) ->
     grService.plural(pluralExpression, input)
+]
 
 angular.module('granula').directive 'grStatus', ->
   (scope, el) ->
@@ -197,7 +199,7 @@ angular.module('granula').directive 'grStatus', ->
     scope.$on 'gr-lang-changed', ->
       el.removeClass "gr-lang-load"
 
-angular.module('granula').directive 'grLang', ($rootScope, grService, $interpolate, $http)->
+angular.module('granula').directive 'grLang', ['$rootScope', 'grService', '$interpolate', '$http', ($rootScope, grService, $interpolate, $http)->
   compileScript = (el, attrs) ->
     langName = attrs.grLang
     throw new Error("gr-lang for script element shall have value - name of language") if (langName ? "").length == 0
@@ -231,7 +233,7 @@ angular.module('granula').directive 'grLang', ($rootScope, grService, $interpola
       compileScript(el, attrs)
     else
       compileOther(el, attrs)
-
+]
 
 
 processDomText = (grService, $interpolate, interpolateKey, startKey, readTextFn, writeTextFn, el) ->
@@ -274,7 +276,7 @@ processDomText = (grService, $interpolate, interpolateKey, startKey, readTextFn,
 
 
 
-angular.module('granula').directive 'grAttrs', (grService, $interpolate) ->
+angular.module('granula').directive 'grAttrs', ['grService', '$interpolate', (grService, $interpolate) ->
   read = (attrName) -> (el) ->el.attr(attrName)
   write = (attrName) -> (el, val) -> el.attr(attrName, val)
 
@@ -291,10 +293,10 @@ angular.module('granula').directive 'grAttrs', (grService, $interpolate) ->
       }
     (scope, el, attrs) ->
       keyListeners = linkFunctions.map (l) -> l.link(scope, el).onKeyChanged
+]
 
 
-
-angular.module('granula').directive 'grKey', (grService, $interpolate) ->
+angular.module('granula').directive 'grKey', ['grService', '$interpolate', (grService, $interpolate) ->
   read = (el) -> el.html()
   write =(el, val) -> el.html(val)
   compile: (el, attrs) ->
@@ -304,3 +306,4 @@ angular.module('granula').directive 'grKey', (grService, $interpolate) ->
     {link} = processDomText(grService, $interpolate, interpolateKey, startKey, read, write, el)
     (scope, el, attrs) ->
       link scope, el
+]
